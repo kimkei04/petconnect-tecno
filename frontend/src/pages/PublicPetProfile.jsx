@@ -92,9 +92,39 @@ export default function PublicPetProfile() {
       <main className="pt-28 pb-40 px-6 max-w-lg mx-auto w-full space-y-8">
         {/* Status Banner */}
         {pet.status === 'lost' ? (
-          <div className="bg-error rounded-2xl p-5 flex items-center justify-center gap-4 shadow-xl shadow-error/20 animate-in zoom-in duration-500">
-            <span className="material-symbols-outlined text-white text-2xl animate-pulse">warning</span>
-            <span className="font-bold text-white text-xs tracking-[0.2em] uppercase">This Pet is Reported Lost</span>
+          <div className="space-y-4 animate-in zoom-in duration-500">
+            <div className="bg-error rounded-2xl p-5 flex items-center justify-center gap-4 shadow-xl shadow-error/20">
+              <span className="material-symbols-outlined text-white text-2xl animate-pulse">warning</span>
+              <span className="font-bold text-white text-xs tracking-[0.2em] uppercase">This Pet is Reported Lost</span>
+            </div>
+            
+            <div className="bg-white rounded-3xl p-6 border-2 border-error/20 shadow-lg space-y-4">
+               <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-error/10 text-error flex items-center justify-center shrink-0">
+                     <span className="material-symbols-outlined text-xl">location_on</span>
+                  </div>
+                  <div>
+                     <p className="text-[10px] font-bold text-error uppercase tracking-widest mb-1">Last Seen At</p>
+                     <p className="text-sm font-bold text-on-surface">{pet.last_seen_location || 'Lahug, Cebu City'}</p>
+                  </div>
+               </div>
+
+               {pet.reward_amount && (
+                 <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                       <span className="material-symbols-outlined text-xl">payments</span>
+                    </div>
+                    <div>
+                       <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-1">Reward Offered</p>
+                       <p className="text-sm font-black text-on-surface">{pet.reward_amount}</p>
+                    </div>
+                 </div>
+               )}
+
+               <div className="p-4 bg-surface-container-low rounded-2xl border border-surface-container">
+                  <p className="text-[11px] text-on-surface-variant leading-relaxed italic">"{pet.lost_description || 'Please help me get back home. I am friendly but might be scared.'}"</p>
+               </div>
+            </div>
           </div>
         ) : (
           <div className="bg-tertiary rounded-2xl p-5 flex items-center justify-center gap-4 shadow-xl shadow-tertiary/20 animate-in zoom-in duration-500">

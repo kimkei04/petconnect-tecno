@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "install-all": "npm.cmd install && cd frontend && npm.cmd install && cd ../backend && npm.cmd install",
-    "dev": "concurrently \"npm.cmd run backend\" \"npm.cmd run frontend\"",
+    "dev": "concurrently \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
     "frontend": "cd frontend && npm.cmd run dev",
     "backend": "cd backend && node index.js",
     "build": "cd frontend && npm run build"

@@ -20,6 +20,7 @@ API.interceptors.request.use(config => {
 // ── Auth ────────────────────────────────────────────────
 export const login    = data => API.post('/auth/login', data)
 export const register = data => API.post('/auth/register', data)
+export const updateProfile = data => API.put('/auth/profile', data)
 
 // ── Pets ────────────────────────────────────────────────
 export const getPets     = ()         => API.get('/pets')
@@ -37,7 +38,7 @@ export const markRead    = id         => API.patch(`/alerts/${id}/read`)
 
 // ── Lost pets ───────────────────────────────────────────
 export const getLostPets  = ()         => API.get('/lost')
-export const reportLost   = id         => API.post(`/pets/${id}/lost`)
+export const reportLost   = (id, data) => API.post(`/pets/${id}/lost`, data)
 export const resolvedLost = id         => API.post(`/pets/${id}/found`)
 
 // ── LGU Dashboard ───────────────────────────────────────

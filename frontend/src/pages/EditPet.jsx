@@ -21,53 +21,99 @@ export default function EditPet() {
   const [markingImages, setMarkingImages] = useState([])
   const [markingImagePreviews, setMarkingImagePreviews] = useState([])
 
+  const [vaccineList, setVaccineList] = useState([])
+
   useEffect(() => {
     if (!isNew) {
       getPet(id).then(r => {
         setForm(r.data)
         if (r.data.photo_url) setPetPhotoPreview(r.data.photo_url)
+        
+        // Parse vaccines if structured
+        try {
+          if (r.data.vaccines && r.data.vaccines.startsWith('[')) {
+            setVaccineList(JSON.parse(r.data.vaccines))
+          } else if (r.data.vaccines) {
+            setVaccineList([{ name: 'General', date: r.data.vaccines, next_due: '—' }])
+          }
+        } catch (e) {
+          setVaccineList([])
+        }
+
+        // Parse marking images
+        try {
+          if (r.data.marking_images && r.data.marking_images.startsWith('[')) {
+            setMarkingImagePreviews(JSON.parse(r.data.marking_images))
+          }
+        } catch (e) {
+          setMarkingImagePreviews([])
+        }
       }).catch(() => {
-        const mockPets = [
-          { id: '1', name: 'Buddy', breed: 'Golden Retriever', species: 'Dog', age: 3, weight: 28, color: 'Golden', photo_url: 'https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&q=80&w=400' },
-          { id: '2', name: 'Milo', breed: 'Beagle', species: 'Dog', age: 2, weight: 12, color: 'Brown/White', photo_url: 'https://images.unsplash.com/photo-1537151608828-ea2b11777ee8?auto=format&fit=crop&q=80&w=400' }
-        ]
-        const found = mockPets.find(p => p.id === String(id))
-        if (found) {
-          setForm(found)
-          setPetPhotoPreview(found.photo_url)
+        // Fallback mockup
+        const mock = { id: '1', name: 'Buddy', breed: 'Golden Retriever', species: 'Dog', age: 3, weight: 28, color: 'Golden', photo_url: 'https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&q=80&w=400' }
+        if (id === '1') {
+          setForm(mock)
+          setPetPhotoPreview(mock.photo_url)
+          setVaccineList([
+            { name: 'Rabies', date: '2024-05-15', next_due: '2025-05-15' },
+            { name: 'Parvovirus', date: '2024-02-10', next_due: '2025-02-10' }
+          ])
         }
       }).finally(() => setLoading(false))
     }
   }, [id, isNew])
 
+  const addVaccine = () => {
+    setVaccineList([...vaccineList, { name: '', date: '', next_due: '' }])
+  }
+
+  const removeVaccine = (index) => {
+    setVaccineList(vaccineList.filter((_, i) => i !== index))
+  }
+
+  const handleVaccineChange = (index, field, value) => {
+    const updated = [...vaccineList]
+    updated[index][field] = value
+    setVaccineList(updated)
+  }
+
   const handleChange = e => {
-    const val = e.target.type === 'checkbox' ? e.target.checked : e.target.value
-    setForm(f => ({ ...f, [e.target.name]: val }))
+    const { name, value } = e.target
+    setForm(prev => ({ ...prev, [name]: value }))
   }
 
   const handlePetPhotoChange = e => {
-    const file = e.target.files?.[0]
+    const file = e.target.files[0]
     if (file) {
       setPetPhoto(file)
       const reader = new FileReader()
-      reader.onload = () => setPetPhotoPreview(reader.result)
+      reader.onloadend = () => setPetPhotoPreview(reader.result)
       reader.readAsDataURL(file)
     }
   }
 
   const handleMarkingImagesChange = e => {
-    const files = Array.from(e.target.files || [])
-    setMarkingImages(prev => [...prev, ...files])
+    const files = Array.from(e.target.files)
+    const newImages = [...markingImages]
+    const newPreviews = [...markingImagePreviews]
+
     files.forEach(file => {
-      const reader = new FileReader()
-      reader.onload = () => setMarkingImagePreviews(prev => [...prev, reader.result])
-      reader.readAsDataURL(file)
+      if (newPreviews.length < 4) {
+        newImages.push(file)
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          newPreviews.push(reader.result)
+          setMarkingImagePreviews([...newPreviews])
+        }
+        reader.readAsDataURL(file)
+      }
     })
+    setMarkingImages(newImages)
   }
 
-  const removeMarkingImage = index => {
-    setMarkingImages(prev => prev.filter((_, i) => i !== index))
-    setMarkingImagePreviews(prev => prev.filter((_, i) => i !== index))
+  const removeMarkingImage = (index) => {
+    setMarkingImages(markingImages.filter((_, i) => i !== index))
+    setMarkingImagePreviews(markingImagePreviews.filter((_, i) => i !== index))
   }
 
   const handleSubmit = async e => {
@@ -77,7 +123,9 @@ export default function EditPet() {
     try {
       const payload = {
         ...form,
-        photo_url: petPhotoPreview
+        photo_url: petPhotoPreview,
+        vaccines: JSON.stringify(vaccineList),
+        marking_images: JSON.stringify(markingImagePreviews)
       }
       
       if (isNew) await createPet(payload)
@@ -202,21 +250,80 @@ export default function EditPet() {
           </div>
         </div>
 
-        {/* Additional Records */}
+        {/* Medical Section */}
         <div className="bg-white rounded-[2.5rem] p-10 border border-surface-container shadow-xl shadow-primary/5 space-y-10 relative overflow-hidden">
-          <div className="space-y-4">
-            <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em] ml-1">Medical Records</label>
-            <textarea name="medical_conditions" value={form.medical_conditions || ''} onChange={handleChange} rows={3} placeholder="Allergies, chronic issues, etc." className="w-full bg-surface-container-low/50 border border-surface-container rounded-2xl p-5 text-sm font-medium text-on-surface focus:outline-none focus:ring-4 focus:ring-primary/5 transition-all resize-none" />
-          </div>
+          <div className="absolute top-0 left-0 w-full h-1 bg-tertiary"></div>
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <span className="material-symbols-outlined text-tertiary">medical_information</span>
+              <h2 className="text-lg font-serif-elegant font-bold text-on-surface">Medical & Health</h2>
+            </div>
 
-          <div className="space-y-4">
-            <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em] ml-1">Vaccine History</label>
-            <textarea name="vaccines" value={form.vaccines || ''} onChange={handleChange} rows={3} placeholder="Dates and types of vaccines" className="w-full bg-surface-container-low/50 border border-surface-container rounded-2xl p-5 text-sm font-medium text-on-surface focus:outline-none focus:ring-4 focus:ring-primary/5 transition-all resize-none" />
+            <div className="space-y-4">
+              <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em] ml-1">Medical Conditions</label>
+              <textarea name="medical_conditions" value={form.medical_conditions || ''} onChange={handleChange} rows={3} placeholder="Allergies, chronic issues, etc." className="w-full bg-surface-container-low/50 border border-surface-container rounded-2xl p-5 text-sm font-medium text-on-surface focus:outline-none focus:ring-4 focus:ring-primary/5 transition-all resize-none" />
+            </div>
+
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em] ml-1">Vaccine History</label>
+                <button type="button" onClick={addVaccine} className="bg-tertiary text-white px-4 py-2 rounded-xl text-[9px] font-bold uppercase tracking-widest flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-sm shadow-tertiary/20">
+                  <span className="material-symbols-outlined text-sm">add</span> Add Record
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                {vaccineList.map((v, i) => (
+                  <div key={i} className="p-5 bg-surface-container-low/30 border border-surface-container/50 rounded-2xl space-y-4 relative group">
+                    <button type="button" onClick={() => removeVaccine(i)} className="absolute top-4 right-4 text-on-surface-variant/30 hover:text-error transition-colors">
+                      <span className="material-symbols-outlined text-lg">delete</span>
+                    </button>
+                    
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest">Vaccine Name</label>
+                      <input 
+                        value={v.name} 
+                        onChange={e => handleVaccineChange(i, 'name', e.target.value)} 
+                        placeholder="e.g. Rabies" 
+                        className="w-full bg-white border border-surface-container rounded-xl p-3 text-sm font-bold outline-none focus:border-tertiary/50" 
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                       <div className="space-y-2">
+                          <label className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest">Date Given</label>
+                          <input 
+                            type="date"
+                            value={v.date} 
+                            onChange={e => handleVaccineChange(i, 'date', e.target.value)} 
+                            className="w-full bg-white border border-surface-container rounded-xl p-3 text-xs font-medium outline-none focus:border-tertiary/50" 
+                          />
+                       </div>
+                       <div className="space-y-2">
+                          <label className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest">Next Due</label>
+                          <input 
+                            type="date"
+                            value={v.next_due} 
+                            onChange={e => handleVaccineChange(i, 'next_due', e.target.value)} 
+                            className="w-full bg-white border border-surface-container rounded-xl p-3 text-xs font-medium outline-none focus:border-tertiary/50" 
+                          />
+                       </div>
+                    </div>
+                  </div>
+                ))}
+                {vaccineList.length === 0 && (
+                  <div className="text-center py-10 border-2 border-dashed border-surface-container rounded-2xl opacity-40">
+                    <span className="material-symbols-outlined text-4xl mb-2">vaccines</span>
+                    <p className="text-[10px] font-bold uppercase tracking-widest">No vaccines recorded</p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
           
-          <div className="space-y-4">
+          <div className="space-y-4 pt-6 border-t border-surface-container/50">
              <div className="flex items-center justify-between ml-1">
-                <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em]">Contact Display</label>
+                <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em]">Contact Visibility</label>
                 <div className={`relative w-12 h-6 rounded-full transition-colors cursor-pointer ${form.hide_phone ? 'bg-error/30' : 'bg-tertiary-container'}`} onClick={() => setForm(f => ({...f, hide_phone: !f.hide_phone}))}>
                   <div className={`absolute top-1 w-4 h-4 rounded-full transition-all duration-300 ${form.hide_phone ? 'left-7 bg-error' : 'left-1 bg-tertiary'}`} />
                 </div>

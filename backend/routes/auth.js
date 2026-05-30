@@ -2,8 +2,23 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import db from '../db.js';
+import auth from '../middleware/auth.js';
 
 const router = express.Router();
+
+router.put('/profile', auth, async (req, res) => {
+  try {
+    const { name, email, phone, email_alerts, sms_alerts } = req.body;
+    await db.query(
+      'UPDATE users SET name = ?, email = ?, phone = ?, email_alerts = ?, sms_alerts = ? WHERE id = ?',
+      [name, email, phone, email_alerts, sms_alerts, req.userId]
+    );
+    res.json({ message: 'Profile updated successfully' });
+  } catch (err) {
+    console.error('Update Profile Error:', err);
+    res.status(500).json({ message: 'Failed to update profile' });
+  }
+});
 
 router.post('/register', async (req, res) => {
   try {

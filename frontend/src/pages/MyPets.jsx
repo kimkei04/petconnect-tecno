@@ -5,7 +5,7 @@ import BottomNav from '../components/BottomNav'
 
 export default function MyPets() {
   const navigate = useNavigate()
-  const user = JSON.parse(localStorage.getItem('user') || '{}')
+  const user = JSON.parse(localStorage.getItem('user') || '{}') || {}
   const [pets, setPets] = useState([])
   const [loading, setLoading] = useState(true)
 

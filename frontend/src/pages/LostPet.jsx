@@ -91,10 +91,37 @@ export default function LostPet() {
 
       <main className="pt-24 pb-12 px-5 max-w-lg mx-auto w-full space-y-6">
         {/* Emergency Alert Banner */}
-        <div className="bg-error-container/20 border border-error/20 rounded-2xl p-4 flex items-center justify-center gap-3 animate-pulse">
-          <span className="material-symbols-outlined text-error text-xl">warning</span>
-          <span className="font-black text-error text-[10px] tracking-widest uppercase">🚨 This Pet is Lost</span>
-          <span className="material-symbols-outlined text-error text-xl">warning</span>
+        <div className="bg-error rounded-2xl p-5 flex flex-col items-center gap-3 shadow-xl shadow-error/20 animate-pulse">
+          <div className="flex items-center gap-3">
+             <span className="material-symbols-outlined text-white text-xl">warning</span>
+             <span className="font-black text-white text-[11px] tracking-widest uppercase">🚨 Emergency: This Pet is Lost</span>
+             <span className="material-symbols-outlined text-white text-xl">warning</span>
+          </div>
+          {pet.reward_amount && (
+            <div className="bg-white/20 backdrop-blur-sm px-4 py-1 rounded-full text-[10px] font-black text-white uppercase tracking-[0.2em] border border-white/20">
+               Reward: {pet.reward_amount}
+            </div>
+          )}
+        </div>
+
+        {/* Incident Details Card */}
+        <div className="bg-white rounded-[2.5rem] p-8 shadow-xl border-2 border-error/10 space-y-6 relative overflow-hidden">
+           <div className="absolute top-0 left-0 w-full h-1 bg-error"></div>
+           <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-error/10 text-error flex items-center justify-center">
+                 <span className="material-symbols-outlined text-2xl">my_location</span>
+              </div>
+              <div>
+                 <p className="text-[10px] font-black text-error uppercase tracking-widest mb-1">Last Seen At</p>
+                 <p className="text-lg font-black text-on-surface leading-tight">{pet.last_seen_location || 'Lahug, Cebu City'}</p>
+              </div>
+           </div>
+
+           <div className="p-5 bg-surface-container-low/50 rounded-2xl border border-surface-container italic">
+              <p className="text-sm text-on-surface-variant font-medium leading-relaxed">
+                 "{pet.lost_description || 'Please help me get back home. I am friendly but might be scared if approached too quickly.'}"
+              </p>
+           </div>
         </div>
 
         {/* Profile Hero */}
