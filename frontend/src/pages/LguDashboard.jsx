@@ -8,8 +8,15 @@ export default function LguDashboard() {
   const [hoveredBar, setHoveredBar] = useState(null)
 
   useEffect(() => {
+    if (!localStorage.getItem('token')) {
+      return navigate('/login?role=lgu')
+    }
+    const user = JSON.parse(localStorage.getItem('user') || '{}')
+    if (user.role !== 'lgu' && user.role !== 'admin') {
+      return navigate('/dashboard')
+    }
     setTimeout(() => setLoading(false), 500)
-  }, [])
+  }, [navigate])
 
   const navItems = [
     { icon: 'grid_view', label: 'Overview' },

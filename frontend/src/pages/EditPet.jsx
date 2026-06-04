@@ -24,6 +24,11 @@ export default function EditPet() {
   const [vaccineList, setVaccineList] = useState([])
 
   useEffect(() => {
+    if (!localStorage.getItem('token')) return navigate('/login')
+    const loggedInUser = JSON.parse(localStorage.getItem('user') || '{}')
+    if (loggedInUser.role === 'lgu' || loggedInUser.role === 'admin') {
+      return navigate('/lgu')
+    }
     if (!isNew) {
       getPet(id).then(r => {
         setForm(r.data)

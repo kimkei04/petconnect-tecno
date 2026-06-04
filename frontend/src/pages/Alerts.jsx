@@ -21,6 +21,10 @@ export default function Alerts() {
 
   useEffect(() => {
     if (!localStorage.getItem('token')) return navigate('/login')
+    const loggedInUser = JSON.parse(localStorage.getItem('user') || '{}')
+    if (loggedInUser.role === 'lgu' || loggedInUser.role === 'admin') {
+      return navigate('/lgu')
+    }
     getAlerts()
       .then(res => {
         setAlerts(res.data?.length ? res.data : [
@@ -149,9 +153,9 @@ export default function Alerts() {
             <span className="text-gradient">PetConnect</span>
           </Link>
           <div className="flex items-center gap-4">
-            <button className="w-9 h-9 rounded-full bg-primary-container border border-primary/20 text-primary font-bold text-sm shadow-sm">
+            <Link to="/dashboard/settings" className="w-9 h-9 rounded-full bg-primary-container border border-primary/20 text-primary font-bold text-sm shadow-sm hover:shadow transition-all flex items-center justify-center">
               {user.name?.charAt(0) || 'U'}
-            </button>
+            </Link>
           </div>
         </div>
       </header>

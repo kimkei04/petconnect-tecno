@@ -1,9 +1,11 @@
 import { useState, useRef } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { register, createPet } from '../services/api'
 
 export default function Register() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const role = searchParams.get('role') || 'owner'
   const fileInputRef = useRef(null)
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
@@ -74,27 +76,34 @@ export default function Register() {
         email: formData.email,
         phone: formData.mobile,
         password: formData.password,
-        role: 'owner'
+        role: role
       })
 
       localStorage.setItem('token', authRes.data.token)
       localStorage.setItem('user', JSON.stringify(authRes.data.user))
 
-      await createPet({
-        name: formData.petName,
-        species: formData.species,
-        breed: formData.breed,
-        tag_id: formData.tagId,
-        photo_url: formData.previewUrl
-      })
-
-      navigate('/dashboard')
+      if (role === 'lgu') {
+        navigate('/lgu')
+      } else {
+        await createPet({
+          name: formData.petName,
+          species: formData.species,
+          breed: formData.breed,
+          tag_id: formData.tagId,
+          photo_url: formData.previewUrl
+        })
+        navigate('/dashboard')
+      }
     } catch (err) {
       console.warn('API Error (Demo Mode Fallback):', err)
       setTimeout(() => {
         localStorage.setItem('token', 'demo-token')
-        localStorage.setItem('user', JSON.stringify({ name: formData.fullName, email: formData.email, role: 'owner' }))
-        navigate('/dashboard')
+        localStorage.setItem('user', JSON.stringify({ name: formData.fullName, email: formData.email, role: role }))
+        if (role === 'lgu') {
+          navigate('/lgu')
+        } else {
+          navigate('/dashboard')
+        }
       }, 1500)
     } finally {
       setLoading(false)
@@ -122,19 +131,21 @@ export default function Register() {
 
       <main className="flex-1 overflow-y-auto px-6 pb-40 selection:bg-primary-container selection:text-primary">
         <div className="max-w-md mx-auto w-full">
-          <div className="flex justify-between items-center mb-16 relative px-2">
-            <div className="absolute top-1/2 left-0 w-full h-[1px] bg-surface-container -translate-y-1/2 z-0"></div>
-            {steps.map((s) => (
-              <div key={s.id} className="relative z-10 flex flex-col items-center gap-3">
-                <div className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-500 shadow-sm ${step >= s.id ? 'bg-primary text-on-primary' : 'bg-white border border-surface-container text-on-surface-variant/40'}`}>
-                  <span className={`material-symbols-outlined text-xl ${step >= s.id ? 'fill-1' : ''}`} style={{ fontVariationSettings: step >= s.id ? "'FILL' 1" : "" }}>{s.icon}</span>
+          {role !== 'lgu' && (
+            <div className="flex justify-between items-center mb-16 relative px-2">
+              <div className="absolute top-1/2 left-0 w-full h-[1px] bg-surface-container -translate-y-1/2 z-0"></div>
+              {steps.map((s) => (
+                <div key={s.id} className="relative z-10 flex flex-col items-center gap-3">
+                  <div className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-500 shadow-sm ${step >= s.id ? 'bg-primary text-on-primary' : 'bg-white border border-surface-container text-on-surface-variant/40'}`}>
+                    <span className={`material-symbols-outlined text-xl ${step >= s.id ? 'fill-1' : ''}`} style={{ fontVariationSettings: step >= s.id ? "'FILL' 1" : "" }}>{s.icon}</span>
+                  </div>
+                  <span className={`text-[9px] font-bold tracking-[0.15em] hidden sm:block ${step >= s.id ? 'text-primary' : 'text-on-surface-variant/40'}`}>
+                    {s.label}
+                  </span>
                 </div>
-                <span className={`text-[9px] font-bold tracking-[0.15em] hidden sm:block ${step >= s.id ? 'text-primary' : 'text-on-surface-variant/40'}`}>
-                  {s.label}
-                </span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
 
           {error && (
             <div className="mb-8 p-4 bg-error/5 border border-error/20 rounded-2xl text-error text-[11px] font-bold uppercase tracking-widest text-center animate-in zoom-in duration-300">
@@ -146,8 +157,12 @@ export default function Register() {
             {step === 1 && (
               <div className="space-y-10">
                 <div className="text-center space-y-3">
-                  <h1 className="text-4xl font-serif-elegant font-bold text-on-surface tracking-tight">Create your account</h1>
-                  <p className="text-sm text-on-surface-variant font-light tracking-wide">Start your journey to ultimate pet safety.</p>
+                  <h1 className="text-4xl font-serif-elegant font-bold text-on-surface tracking-tight">
+                    {role === 'lgu' ? 'Create LGU Admin Account' : 'Create your account'}
+                  </h1>
+                  <p className="text-sm text-on-surface-variant font-light tracking-wide">
+                    {role === 'lgu' ? "Start managing your community's pet safety." : 'Start your journey to ultimate pet safety.'}
+                  </p>
                 </div>
 
                 <div className="bg-white rounded-[2.5rem] p-10 border border-surface-container/50 shadow-xl shadow-primary/5 space-y-8 relative overflow-hidden">
@@ -305,15 +320,18 @@ export default function Register() {
 
       <footer className="fixed bottom-0 left-0 w-full bg-surface/80 backdrop-blur-xl border-t border-surface-container/50 p-8 z-50">
         <div className="max-w-md mx-auto flex justify-between items-center px-4">
-          <button onClick={prevStep} className={`flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.2em] transition-all ${step === 1 ? 'opacity-0 pointer-events-none' : 'text-on-surface-variant hover:text-primary'}`}>
+          <button 
+            onClick={role === 'lgu' ? () => navigate('/login?role=lgu') : prevStep} 
+            className={`flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.2em] transition-all ${step === 1 && role !== 'lgu' ? 'opacity-0 pointer-events-none' : 'text-on-surface-variant hover:text-primary'}`}
+          >
             <span className="material-symbols-outlined text-lg">arrow_back</span> Back
           </button>
           <button 
-            onClick={step === 4 ? handleFinalSubmit : nextStep}
+            onClick={role === 'lgu' ? handleFinalSubmit : (step === 4 ? handleFinalSubmit : nextStep)}
             disabled={loading}
             className="px-12 py-5 bg-brown-gradient text-on-primary rounded-2xl font-bold text-[11px] uppercase tracking-[0.2em] flex items-center gap-4 shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all disabled:opacity-50 group"
           >
-            {loading ? <span className="material-symbols-outlined animate-spin text-lg">progress_activity</span> : step === 4 ? 'Complete Registration' : 'Next Step'}
+            {loading ? <span className="material-symbols-outlined animate-spin text-lg">progress_activity</span> : (role === 'lgu' || step === 4) ? 'Complete Registration' : 'Next Step'}
             {!loading && <span className="material-symbols-outlined text-lg group-hover:translate-x-1 transition-transform">arrow_forward</span>}
           </button>
         </div>

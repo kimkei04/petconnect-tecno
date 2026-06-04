@@ -11,6 +11,10 @@ export default function MyPets() {
 
   useEffect(() => {
     if (!localStorage.getItem('token')) return navigate('/login')
+    const loggedInUser = JSON.parse(localStorage.getItem('user') || '{}')
+    if (loggedInUser.role === 'lgu' || loggedInUser.role === 'admin') {
+      return navigate('/lgu')
+    }
     getPets()
       .then(res => {
         setPets(res.data?.length ? res.data : [
@@ -48,12 +52,9 @@ export default function MyPets() {
             <Link to="/dashboard/alerts" className="p-2 text-on-surface-variant hover:text-primary transition-colors">
               <span className="material-symbols-outlined text-2xl">notifications</span>
             </Link>
-            <button
-              onClick={() => { localStorage.clear(); navigate('/') }}
-              className="w-9 h-9 rounded-full bg-primary-container border border-primary/20 text-primary font-bold text-sm shadow-sm hover:shadow transition-all"
-            >
+            <Link to="/dashboard/settings" className="w-9 h-9 rounded-full bg-primary-container border border-primary/20 text-primary font-bold text-sm shadow-sm hover:shadow transition-all flex items-center justify-center">
               {user.name?.charAt(0) || 'U'}
-            </button>
+            </Link>
           </div>
         </div>
       </header>

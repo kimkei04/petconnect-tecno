@@ -17,6 +17,11 @@ export default function PetProfile() {
   })
 
   useEffect(() => {
+    if (!localStorage.getItem('token')) return navigate('/login')
+    const loggedInUser = JSON.parse(localStorage.getItem('user') || '{}')
+    if (loggedInUser.role === 'lgu' || loggedInUser.role === 'admin') {
+      return navigate('/lgu')
+    }
     getPet(id)
       .then(r => setPet(r.data))
       .catch(() => {
