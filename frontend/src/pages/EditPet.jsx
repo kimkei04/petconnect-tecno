@@ -11,38 +11,62 @@ export default function EditPet() {
   const [loading, setLoading] = useState(!isNew)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  
   const [form, setForm] = useState({
-    name: '', species: 'Dog', breed: '', age: '', weight: '',
-    color: '', medical_conditions: '', vaccines: '', hide_phone: false, address: '',
+    name: '', 
+    species: 'Dog', 
+    breed: '', 
+    sex: 'Unknown',
+    date_of_birth: '',
+    weight: '',
+    color: '', 
+    microchip_id: '',
+    address: '',
+    barangay: '',
+    hide_phone: 0,
+    hide_address: 0,
+    hide_medical: 0,
+    tag_id: ''
   })
   
   const [petPhoto, setPetPhoto] = useState(null)
   const [petPhotoPreview, setPetPhotoPreview] = useState(null)
   const [markingImages, setMarkingImages] = useState([])
   const [markingImagePreviews, setMarkingImagePreviews] = useState([])
-
   const [vaccineList, setVaccineList] = useState([])
+  const [emergencyContacts, setEmergencyContacts] = useState([])
 
   useEffect(() => {
     if (!localStorage.getItem('token')) return navigate('/login')
     const loggedInUser = JSON.parse(localStorage.getItem('user') || '{}')
     if (loggedInUser.role === 'lgu' || loggedInUser.role === 'admin') {
       return navigate('/lgu')
+    } else if (loggedInUser.role === 'vet') {
+      return navigate('/vet')
     }
+    
     if (!isNew) {
       getPet(id).then(r => {
-        setForm(r.data)
+        const birthDate = r.data.date_of_birth ? new Date(r.data.date_of_birth).toISOString().split('T')[0] : '';
+        setForm({
+          ...r.data,
+          date_of_birth: birthDate
+        })
         if (r.data.photo_url) setPetPhotoPreview(r.data.photo_url)
         
-        // Parse vaccines if structured
-        try {
-          if (r.data.vaccines && r.data.vaccines.startsWith('[')) {
-            setVaccineList(JSON.parse(r.data.vaccines))
-          } else if (r.data.vaccines) {
-            setVaccineList([{ name: 'General', date: r.data.vaccines, next_due: '—' }])
-          }
-        } catch (e) {
-          setVaccineList([])
+        // Map vaccine records from vaccinations table
+        if (r.data.vaccinations) {
+          const mapped = r.data.vaccinations.map(v => ({
+            name: v.vaccine_name,
+            date: v.date_given ? new Date(v.date_given).toISOString().split('T')[0] : '',
+            next_due: v.next_due_date ? new Date(v.next_due_date).toISOString().split('T')[0] : ''
+          }))
+          setVaccineList(mapped)
+        }
+
+        // Map emergency contacts
+        if (r.data.emergencyContacts) {
+          setEmergencyContacts(r.data.emergencyContacts)
         }
 
         // Parse marking images
@@ -53,20 +77,12 @@ export default function EditPet() {
         } catch (e) {
           setMarkingImagePreviews([])
         }
-      }).catch(() => {
-        // Fallback mockup
-        const mock = { id: '1', name: 'Buddy', breed: 'Golden Retriever', species: 'Dog', age: 3, weight: 28, color: 'Golden', photo_url: 'https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&q=80&w=400' }
-        if (id === '1') {
-          setForm(mock)
-          setPetPhotoPreview(mock.photo_url)
-          setVaccineList([
-            { name: 'Rabies', date: '2024-05-15', next_due: '2025-05-15' },
-            { name: 'Parvovirus', date: '2024-02-10', next_due: '2025-02-10' }
-          ])
-        }
+      }).catch((err) => {
+        console.error('Failed to load pet details:', err)
+        setError('Pet profile not found.')
       }).finally(() => setLoading(false))
     }
-  }, [id, isNew])
+  }, [id, isNew, navigate])
 
   const addVaccine = () => {
     setVaccineList([...vaccineList, { name: '', date: '', next_due: '' }])
@@ -82,9 +98,24 @@ export default function EditPet() {
     setVaccineList(updated)
   }
 
+  const addEmergencyContact = () => {
+    setEmergencyContacts([...emergencyContacts, { contact_name: '', contact_phone: '', relationship: '', is_primary: 0 }])
+  }
+
+  const removeEmergencyContact = (index) => {
+    setEmergencyContacts(emergencyContacts.filter((_, i) => i !== index))
+  }
+
+  const handleContactChange = (index, field, value) => {
+    const updated = [...emergencyContacts]
+    updated[index][field] = value
+    setEmergencyContacts(updated)
+  }
+
   const handleChange = e => {
-    const { name, value } = e.target
-    setForm(prev => ({ ...prev, [name]: value }))
+    const { name, value, type, checked } = e.target
+    const val = type === 'checkbox' ? (checked ? 1 : 0) : value
+    setForm(prev => ({ ...prev, [name]: val }))
   }
 
   const handlePetPhotoChange = e => {
@@ -129,7 +160,8 @@ export default function EditPet() {
       const payload = {
         ...form,
         photo_url: petPhotoPreview,
-        vaccines: JSON.stringify(vaccineList),
+        vaccines: vaccineList,
+        emergencyContacts: emergencyContacts,
         marking_images: JSON.stringify(markingImagePreviews)
       }
       
@@ -137,8 +169,7 @@ export default function EditPet() {
       else await updatePet(id, payload)
       navigate('/dashboard')
     } catch (err) {
-      setError('Failed to save pet profile. Redirecting...')
-      setTimeout(() => navigate('/dashboard'), 1500)
+      setError(err.response?.data?.message || 'Failed to save pet profile.')
     } finally {
       setSaving(false)
     }
@@ -151,20 +182,20 @@ export default function EditPet() {
   )
 
   return (
-    <div className="min-h-screen bg-surface pb-40 selection:bg-primary-container selection:text-primary">
+    <div className="min-h-screen bg-surface pb-40 selection:bg-primary-container selection:text-primary font-sans">
       <header className="bg-surface/80 backdrop-blur-md fixed top-0 w-full z-50 px-6 h-[72px] flex items-center gap-4 border-b border-surface-container/30 soft-shadow">
         <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-xl bg-primary-container text-primary flex items-center justify-center hover:bg-primary hover:text-on-primary transition-all shadow-sm">
           <span className="material-symbols-outlined text-[20px]">arrow_back</span>
         </button>
-        <h1 className="text-[20px] font-semibold text-on-surface tracking-tight leading-none">{isNew ? 'New Pet Profile' : 'Edit Profile'}</h1>
+        <h1 className="text-[20px] font-semibold text-on-surface tracking-tight leading-none">{isNew ? 'Register New Pet' : 'Edit Pet Profile'}</h1>
       </header>
 
       <form onSubmit={handleSubmit} className="max-w-xl mx-auto px-6 pt-[112px] space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-700">
         {error && (
-          <div className="p-4 bg-error/5 border border-error/20 rounded-2xl text-error text-[10px] font-bold uppercase tracking-widest text-center shadow-sm">{error}</div>
+          <div className="p-4 bg-error/5 border border-error/20 rounded-2xl text-error text-xs font-bold uppercase tracking-widest text-center shadow-sm">{error}</div>
         )}
 
-        {/* Primary Photo Section */}
+        {/* Display Photo */}
         <section className="space-y-4">
           <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em] ml-2">Display Profile Photo</label>
           <div className="relative group">
@@ -198,28 +229,79 @@ export default function EditPet() {
         <div className="bg-white rounded-[2.5rem] p-10 border border-surface-container shadow-xl shadow-primary/5 space-y-8 relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-1 bg-brown-gradient"></div>
           
-          <div className="space-y-2">
-            <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em] ml-1">Pet Name</label>
-            <input name="name" value={form.name || ''} onChange={handleChange} placeholder="e.g. Buddy" className="w-full bg-surface-container-low/50 border border-surface-container rounded-2xl p-5 text-base font-bold text-on-surface focus:outline-none focus:ring-4 focus:ring-primary/5 transition-all" />
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em] ml-1">Pet Name</label>
+              <input required name="name" value={form.name || ''} onChange={handleChange} placeholder="e.g. Buddy" className="w-full bg-surface-container-low/50 border border-surface-container rounded-2xl p-5 text-sm font-bold text-on-surface focus:outline-none" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em] ml-1">Sex</label>
+              <select name="sex" value={form.sex || 'Unknown'} onChange={handleChange} className="w-full bg-surface-container-low/50 border border-surface-container rounded-2xl p-5 text-sm font-bold text-on-surface focus:outline-none">
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Unknown">Unknown</option>
+              </select>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em] ml-1">Age (Years)</label>
-              <input name="age" type="number" value={form.age || ''} onChange={handleChange} placeholder="3" className="w-full bg-surface-container-low/50 border border-surface-container rounded-2xl p-5 text-base font-bold text-on-surface focus:outline-none focus:ring-4 focus:ring-primary/5 transition-all" />
+              <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em] ml-1">Species</label>
+              <select name="species" value={form.species || 'Dog'} onChange={handleChange} className="w-full bg-surface-container-low/50 border border-surface-container rounded-2xl p-5 text-sm font-bold text-on-surface focus:outline-none">
+                <option value="Dog">Dog</option>
+                <option value="Cat">Cat</option>
+                <option value="Bird">Bird</option>
+                <option value="Rabbit">Rabbit</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em] ml-1">Breed</label>
+              <input name="breed" value={form.breed || ''} onChange={handleChange} placeholder="e.g. Beagle" className="w-full bg-surface-container-low/50 border border-surface-container rounded-2xl p-5 text-sm font-bold text-on-surface focus:outline-none" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em] ml-1">Date of Birth</label>
+              <input name="date_of_birth" type="date" value={form.date_of_birth || ''} onChange={handleChange} className="w-full bg-surface-container-low/50 border border-surface-container rounded-2xl p-5 text-xs font-bold text-on-surface focus:outline-none" />
             </div>
             <div className="space-y-2">
               <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em] ml-1">Weight (KG)</label>
-              <input name="weight" type="number" value={form.weight || ''} onChange={handleChange} placeholder="12" className="w-full bg-surface-container-low/50 border border-surface-container rounded-2xl p-5 text-base font-bold text-on-surface focus:outline-none focus:ring-4 focus:ring-primary/5 transition-all" />
+              <input name="weight" type="number" step="0.1" value={form.weight || ''} onChange={handleChange} placeholder="12.5" className="w-full bg-surface-container-low/50 border border-surface-container rounded-2xl p-5 text-sm font-bold text-on-surface focus:outline-none" />
             </div>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em] ml-1">Color / Fur Markings</label>
-            <input name="color" value={form.color || ''} onChange={handleChange} placeholder="Describe unique features" className="w-full bg-surface-container-low/50 border border-surface-container rounded-2xl p-5 text-base font-bold text-on-surface focus:outline-none focus:ring-4 focus:ring-primary/5 transition-all" />
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em] ml-1">Color / Coat</label>
+              <input name="color" value={form.color || ''} onChange={handleChange} placeholder="e.g. Brown/White" className="w-full bg-surface-container-low/50 border border-surface-container rounded-2xl p-5 text-sm font-bold text-on-surface focus:outline-none" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em] ml-1">Microchip ID (Optional)</label>
+              <input name="microchip_id" value={form.microchip_id || ''} onChange={handleChange} placeholder="RFID Chip number" className="w-full bg-surface-container-low/50 border border-surface-container rounded-2xl p-5 text-sm font-bold text-on-surface focus:outline-none" />
+            </div>
           </div>
 
-          {/* Identification Photos */}
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em] ml-1">Barangay</label>
+              <input required name="barangay" value={form.barangay || ''} onChange={handleChange} placeholder="e.g. Lahug" className="w-full bg-surface-container-low/50 border border-surface-container rounded-2xl p-5 text-sm font-bold text-on-surface focus:outline-none" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em] ml-1">Home Address</label>
+              <input name="address" value={form.address || ''} onChange={handleChange} placeholder="Street details" className="w-full bg-surface-container-low/50 border border-surface-container rounded-2xl p-5 text-sm font-bold text-on-surface focus:outline-none" />
+            </div>
+          </div>
+
+          {isNew && (
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em] ml-1">Link NFC/QR Tag ID</label>
+              <input name="tag_id" value={form.tag_id || ''} onChange={handleChange} placeholder="e.g. PTC-1234-X" className="w-full bg-surface-container-low/50 border border-surface-container rounded-2xl p-5 text-sm font-bold text-on-surface focus:outline-none" />
+            </div>
+          )}
+
+          {/* Identifying Photos */}
           <div className="space-y-5 pt-6 border-t border-surface-container/50">
             <div className="flex justify-between items-center">
               <label className="text-[10px] font-bold text-primary uppercase tracking-[0.2em]">IDENTIFYING PHOTOS</label>
@@ -251,22 +333,79 @@ export default function EditPet() {
               )}
             </div>
             <input type="file" multiple accept="image/*" className="hidden" ref={markingInputRef} onChange={handleMarkingImagesChange} />
-            <p className="text-[9px] text-on-surface-variant/60 font-medium leading-relaxed uppercase tracking-widest">Unique marks, scars, or patterns help LGU staff confirm identity.</p>
           </div>
         </div>
 
-        {/* Medical Section */}
+        {/* Emergency Contacts Section */}
+        <div className="bg-white rounded-[2.5rem] p-10 border border-surface-container shadow-xl shadow-primary/5 space-y-10 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-1 bg-secondary"></div>
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <span className="material-symbols-outlined text-secondary">contact_emergency</span>
+              <h2 className="text-lg font-serif-elegant font-bold text-on-surface">Emergency Contacts</h2>
+            </div>
+            
+            <div className="space-y-3">
+              {emergencyContacts.map((c, i) => (
+                <div key={i} className="p-5 bg-surface-container-low/30 border border-surface-container/50 rounded-2xl space-y-4 relative">
+                  <button type="button" onClick={() => removeEmergencyContact(i)} className="absolute top-4 right-4 text-on-surface-variant/30 hover:text-error transition-colors">
+                    <span className="material-symbols-outlined text-lg">delete</span>
+                  </button>
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest">Contact Name</label>
+                    <input 
+                      required
+                      value={c.contact_name} 
+                      onChange={e => handleContactChange(i, 'contact_name', e.target.value)} 
+                      placeholder="e.g. Spouse, Friend, Neighbor" 
+                      className="w-full bg-white border border-surface-container rounded-xl p-3 text-xs font-bold outline-none" 
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest">Phone Number</label>
+                      <input 
+                        required
+                        value={c.contact_phone} 
+                        onChange={e => handleContactChange(i, 'contact_phone', e.target.value)} 
+                        placeholder="e.g. +639xxxxxxxxx" 
+                        className="w-full bg-white border border-surface-container rounded-xl p-3 text-xs font-bold outline-none" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest">Relationship</label>
+                      <input 
+                        value={c.relationship || ''} 
+                        onChange={e => handleContactChange(i, 'relationship', e.target.value)} 
+                        placeholder="e.g. Co-owner, Vet" 
+                        className="w-full bg-white border border-surface-container rounded-xl p-3 text-xs font-bold outline-none" 
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {emergencyContacts.length < 3 && (
+                <button type="button" onClick={addEmergencyContact} className="w-full py-4 bg-surface-container-low text-on-surface-variant rounded-2xl border border-dashed border-surface-container flex items-center justify-center gap-2 hover:bg-primary/5 hover:border-primary/30 transition-all">
+                  <span className="material-symbols-outlined text-lg">add_circle</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest">Add Contact</span>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Medical & Vaccines Section (Owner Records) */}
         <div className="bg-white rounded-[2.5rem] p-10 border border-surface-container shadow-xl shadow-primary/5 space-y-10 relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-1 bg-tertiary"></div>
           <div className="space-y-6">
             <div className="flex items-center gap-3">
               <span className="material-symbols-outlined text-tertiary">medical_information</span>
-              <h2 className="text-lg font-serif-elegant font-bold text-on-surface">Medical & Health</h2>
+              <h2 className="text-lg font-serif-elegant font-bold text-on-surface">Medical Conditions & Vaccines</h2>
             </div>
 
             <div className="space-y-4">
               <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em] ml-1">Medical Conditions</label>
-              <textarea name="medical_conditions" value={form.medical_conditions || ''} onChange={handleChange} rows={3} placeholder="Allergies, chronic issues, etc." className="w-full bg-surface-container-low/50 border border-surface-container rounded-2xl p-5 text-sm font-medium text-on-surface focus:outline-none focus:ring-4 focus:ring-primary/5 transition-all resize-none" />
+              <textarea name="medical_conditions" value={form.medical_conditions || ''} onChange={handleChange} rows={3} placeholder="Allergies, chronic issues, dietary rules..." className="w-full bg-surface-container-low/50 border border-surface-container rounded-2xl p-5 text-sm font-medium text-on-surface focus:outline-none resize-none" />
             </div>
 
             <div className="space-y-6">
@@ -279,7 +418,7 @@ export default function EditPet() {
 
               <div className="space-y-3">
                 {vaccineList.map((v, i) => (
-                  <div key={i} className="p-5 bg-surface-container-low/30 border border-surface-container/50 rounded-2xl space-y-4 relative group">
+                  <div key={i} className="p-5 bg-surface-container-low/30 border border-surface-container/50 rounded-2xl space-y-4 relative">
                     <button type="button" onClick={() => removeVaccine(i)} className="absolute top-4 right-4 text-on-surface-variant/30 hover:text-error transition-colors">
                       <span className="material-symbols-outlined text-lg">delete</span>
                     </button>
@@ -289,8 +428,8 @@ export default function EditPet() {
                       <input 
                         value={v.name} 
                         onChange={e => handleVaccineChange(i, 'name', e.target.value)} 
-                        placeholder="e.g. Rabies" 
-                        className="w-full bg-white border border-surface-container rounded-xl p-3 text-sm font-bold outline-none focus:border-tertiary/50" 
+                        placeholder="e.g. Anti-Rabies" 
+                        className="w-full bg-white border border-surface-container rounded-xl p-3 text-sm font-bold outline-none" 
                       />
                     </div>
                     
@@ -301,7 +440,7 @@ export default function EditPet() {
                             type="date"
                             value={v.date} 
                             onChange={e => handleVaccineChange(i, 'date', e.target.value)} 
-                            className="w-full bg-white border border-surface-container rounded-xl p-3 text-xs font-medium outline-none focus:border-tertiary/50" 
+                            className="w-full bg-white border border-surface-container rounded-xl p-3 text-xs font-medium outline-none" 
                           />
                        </div>
                        <div className="space-y-2">
@@ -310,30 +449,34 @@ export default function EditPet() {
                             type="date"
                             value={v.next_due} 
                             onChange={e => handleVaccineChange(i, 'next_due', e.target.value)} 
-                            className="w-full bg-white border border-surface-container rounded-xl p-3 text-xs font-medium outline-none focus:border-tertiary/50" 
+                            className="w-full bg-white border border-surface-container rounded-xl p-3 text-xs font-medium outline-none" 
                           />
                        </div>
                     </div>
                   </div>
                 ))}
-                {vaccineList.length === 0 && (
-                  <div className="text-center py-10 border-2 border-dashed border-surface-container rounded-2xl opacity-40">
-                    <span className="material-symbols-outlined text-4xl mb-2">vaccines</span>
-                    <p className="text-[10px] font-bold uppercase tracking-widest">No vaccines recorded</p>
-                  </div>
-                )}
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Privacy Toggles */}
+        <div className="bg-white rounded-[2.5rem] p-10 border border-surface-container shadow-xl shadow-primary/5 space-y-6">
+          <h3 className="font-serif-elegant font-bold text-on-surface text-lg">Privacy Preferences</h3>
           
-          <div className="space-y-4 pt-6 border-t border-surface-container/50">
-             <div className="flex items-center justify-between ml-1">
-                <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em]">Contact Visibility</label>
-                <div className={`relative w-12 h-6 rounded-full transition-colors cursor-pointer ${form.hide_phone ? 'bg-error/30' : 'bg-tertiary-container'}`} onClick={() => setForm(f => ({...f, hide_phone: !f.hide_phone}))}>
-                  <div className={`absolute top-1 w-4 h-4 rounded-full transition-all duration-300 ${form.hide_phone ? 'left-7 bg-error' : 'left-1 bg-tertiary'}`} />
-                </div>
+          <div className="space-y-4">
+             <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-[0.1em]">Hide Phone Number from Scan</label>
+                <input type="checkbox" name="hide_phone" checked={!!form.hide_phone} onChange={handleChange} className="w-5 h-5 accent-primary" />
              </div>
-             <p className="text-[10px] text-on-surface-variant font-light italic">{form.hide_phone ? 'Your phone number will be hidden from public scans.' : 'Your phone number will be visible to anyone who scans the tag.'}</p>
+             <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-[0.1em]">Hide Address from Scan</label>
+                <input type="checkbox" name="hide_address" checked={!!form.hide_address} onChange={handleChange} className="w-5 h-5 accent-primary" />
+             </div>
+             <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-[0.1em]">Hide Medical Records from Scan</label>
+                <input type="checkbox" name="hide_medical" checked={!!form.hide_medical} onChange={handleChange} className="w-5 h-5 accent-primary" />
+             </div>
           </div>
         </div>
 
@@ -345,7 +488,7 @@ export default function EditPet() {
             className="w-full py-5 bg-brown-gradient text-on-primary font-bold text-xs uppercase tracking-[0.2em] rounded-2xl shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-4 disabled:opacity-50"
           >
             {saving ? <span className="material-symbols-outlined animate-spin">progress_activity</span> : <span className="material-symbols-outlined">verified</span>}
-            {saving ? 'Processing...' : (isNew ? 'Register Pet' : 'Save Changes')}
+            {saving ? 'Processing...' : (isNew ? 'Register Pet Profile' : 'Save Changes')}
           </button>
         </div>
       </form>
