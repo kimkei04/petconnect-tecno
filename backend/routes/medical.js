@@ -39,8 +39,8 @@ router.get('/pet/:petId', async (req, res) => {
   }
 });
 
-// Add medical record (Vets only)
-router.post('/', requireRole(['vet', 'admin']), async (req, res) => {
+// Add medical record (LGU admins and System admins only)
+router.post('/', requireRole(['lgu', 'admin']), async (req, res) => {
   try {
     const { pet_id, record_type, title, description, diagnosis, treatment, attachment_url, record_date } = req.body;
     
@@ -76,7 +76,7 @@ router.post('/', requireRole(['vet', 'admin']), async (req, res) => {
 });
 
 // Delete medical record
-router.delete('/:id', requireRole(['vet', 'admin']), async (req, res) => {
+router.delete('/:id', requireRole(['lgu', 'admin']), async (req, res) => {
   try {
     await db.query('DELETE FROM medical_records WHERE id = ?', [req.params.id]);
     res.json({ message: 'Medical record deleted successfully' });

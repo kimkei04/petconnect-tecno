@@ -8,7 +8,6 @@ import publicRoutes from './routes/public.js'
 import lguRoutes from './routes/lgu.js'
 import vaccinationRoutes from './routes/vaccinations.js'
 import medicalRoutes from './routes/medical.js'
-import vetRoutes from './routes/vet.js'
 import adoptionRoutes from './routes/adoptions.js'
 import strayRoutes from './routes/strays.js'
 import transferRoutes from './routes/transfers.js'
@@ -35,7 +34,6 @@ app.use('/api/public', publicRoutes)
 app.use('/api/lgu', lguRoutes)
 app.use('/api/vaccinations', vaccinationRoutes)
 app.use('/api/medical', medicalRoutes)
-app.use('/api/vet', vetRoutes)
 app.use('/api/adoptions', adoptionRoutes)
 app.use('/api/strays', strayRoutes)
 app.use('/api/transfers', transferRoutes)

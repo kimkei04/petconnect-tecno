@@ -15,7 +15,6 @@ router.get('/stats', async (req, res) => {
     const [totalPets] = await db.query('SELECT COUNT(*) as count FROM pets');
     const [lostPets] = await db.query('SELECT COUNT(*) as count FROM lost_pet_reports WHERE status = "active"');
     const [totalOwners] = await db.query('SELECT COUNT(*) as count FROM users WHERE role = "owner"');
-    const [totalVets] = await db.query('SELECT COUNT(*) as count FROM users WHERE role = "vet"');
     const [straysOpen] = await db.query('SELECT COUNT(*) as count FROM stray_reports WHERE status = "open"');
     const [reunitedTotal] = await db.query('SELECT COUNT(*) as count FROM lost_pet_reports WHERE status = "resolved"');
     const [scansTotal] = await db.query('SELECT COUNT(*) as count FROM scan_logs');
@@ -30,7 +29,6 @@ router.get('/stats', async (req, res) => {
       total_pets: totalPets[0].count,
       lost_pets: lostPets[0].count,
       total_owners: totalOwners[0].count,
-      total_vets: totalVets[0].count,
       strays_open: straysOpen[0].count,
       reunited_total: reunitedTotal[0].count,
       scans_total: scansTotal[0].count,

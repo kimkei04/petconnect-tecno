@@ -73,17 +73,11 @@ export default function Register() {
     setLoading(true)
     setError('')
     
-    // Add validations for LGU and Vet
+    // Add validations for LGU
     if (role === 'lgu') {
       if (!formData.fullName || !formData.email || !formData.password || !formData.barangay) {
         setLoading(false)
         return setError('Please fill in all LGU details including Barangay.')
-      }
-    }
-    if (role === 'vet') {
-      if (!formData.fullName || !formData.email || !formData.password || !formData.barangay || !formData.clinicName || !formData.licenseNumber) {
-        setLoading(false)
-        return setError('Please fill in all Vet details including Clinic Name and License Number.')
       }
     }
 
@@ -95,8 +89,8 @@ export default function Register() {
         password: formData.password,
         role: role,
         barangay: formData.barangay || null,
-        clinic_name: formData.clinicName || null,
-        license_number: formData.licenseNumber || null
+        clinic_name: null,
+        license_number: null
       })
 
       localStorage.setItem('token', authRes.data.token)
@@ -104,8 +98,6 @@ export default function Register() {
 
       if (role === 'lgu') {
         navigate('/lgu')
-      } else if (role === 'vet') {
-        navigate('/vet')
       } else {
         await createPet({
           name: formData.petName,
@@ -117,26 +109,8 @@ export default function Register() {
         navigate('/dashboard')
       }
     } catch (err) {
-      console.warn('API Error (Demo Mode Fallback):', err)
-      setTimeout(() => {
-        localStorage.setItem('token', 'demo-token')
-        const demoUser = { 
-          name: formData.fullName, 
-          email: formData.email, 
-          role: role,
-          barangay: formData.barangay,
-          clinic_name: formData.clinicName,
-          license_number: formData.licenseNumber
-        }
-        localStorage.setItem('user', JSON.stringify(demoUser))
-        if (role === 'lgu') {
-          navigate('/lgu')
-        } else if (role === 'vet') {
-          navigate('/vet')
-        } else {
-          navigate('/dashboard')
-        }
-      }, 1500)
+      console.error('Registration/Pet creation error:', err)
+      setError(err.response?.data?.message || err.message || 'Registration failed.')
     } finally {
       setLoading(false)
     }
@@ -163,7 +137,7 @@ export default function Register() {
 
       <main className="flex-1 overflow-y-auto px-6 pb-40 selection:bg-primary-container selection:text-primary">
         <div className="max-w-md mx-auto w-full">
-          {role !== 'lgu' && role !== 'vet' && (
+          {role !== 'lgu' && (
             <div className="flex justify-between items-center mb-16 relative px-2">
               <div className="absolute top-1/2 left-0 w-full h-[1px] bg-surface-container -translate-y-1/2 z-0"></div>
               {steps.map((s) => (
@@ -190,10 +164,10 @@ export default function Register() {
               <div className="space-y-10">
                 <div className="text-center space-y-3">
                   <h1 className="text-4xl font-serif-elegant font-bold text-on-surface tracking-tight">
-                    {role === 'lgu' ? 'Create LGU Admin Account' : role === 'vet' ? 'Create Veterinarian Account' : 'Create your account'}
+                    {role === 'lgu' ? 'Create LGU Admin Account' : 'Create your account'}
                   </h1>
                   <p className="text-sm text-on-surface-variant font-light tracking-wide">
-                    {role === 'lgu' ? "Start managing your community's pet safety." : role === 'vet' ? "Access the clinical portal & verify vaccination history." : 'Start your journey to ultimate pet safety.'}
+                    {role === 'lgu' ? "Start managing your community's pet safety." : 'Start your journey to ultimate pet safety.'}
                   </p>
                 </div>
 
@@ -217,24 +191,11 @@ export default function Register() {
                     </div>
                   </div>
 
-                  {(role === 'lgu' || role === 'vet') && (
+                  {role === 'lgu' && (
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em] ml-1">Barangay</label>
                       <input name="barangay" value={formData.barangay} onChange={handleChange} type="text" placeholder="e.g. Lahug" className="w-full bg-surface-container-low/50 border border-surface-container rounded-2xl p-5 text-base font-medium text-on-surface placeholder-on-surface-variant/30 focus:outline-none focus:ring-4 focus:ring-primary/5 transition-all" />
                     </div>
-                  )}
-
-                  {role === 'vet' && (
-                    <>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em] ml-1">Clinic Name</label>
-                        <input name="clinicName" value={formData.clinicName} onChange={handleChange} type="text" placeholder="e.g. Lahug Animal Clinic" className="w-full bg-surface-container-low/50 border border-surface-container rounded-2xl p-5 text-base font-medium text-on-surface placeholder-on-surface-variant/30 focus:outline-none focus:ring-4 focus:ring-primary/5 transition-all" />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em] ml-1">PRC License Number</label>
-                        <input name="licenseNumber" value={formData.licenseNumber} onChange={handleChange} type="text" placeholder="e.g. 1234567" className="w-full bg-surface-container-low/50 border border-surface-container rounded-2xl p-5 text-base font-medium text-on-surface placeholder-on-surface-variant/30 focus:outline-none focus:ring-4 focus:ring-primary/5 transition-all" />
-                      </div>
-                    </>
                   )}
                 </div>
               </div>
@@ -373,17 +334,17 @@ export default function Register() {
       <footer className="fixed bottom-0 left-0 w-full bg-surface/80 backdrop-blur-xl border-t border-surface-container/50 p-8 z-50">
         <div className="max-w-md mx-auto flex justify-between items-center px-4">
           <button 
-            onClick={(role === 'lgu' || role === 'vet') ? () => navigate(`/login?role=${role}`) : prevStep} 
-            className={`flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.2em] transition-all ${(step === 1 && role !== 'lgu' && role !== 'vet') ? 'opacity-0 pointer-events-none' : 'text-on-surface-variant hover:text-primary'}`}
+            onClick={role === 'lgu' ? () => navigate(`/login?role=${role}`) : prevStep} 
+            className={`flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.2em] transition-all ${(step === 1 && role !== 'lgu') ? 'opacity-0 pointer-events-none' : 'text-on-surface-variant hover:text-primary'}`}
           >
             <span className="material-symbols-outlined text-lg">arrow_back</span> Back
           </button>
           <button 
-            onClick={(role === 'lgu' || role === 'vet') ? handleFinalSubmit : (step === 4 ? handleFinalSubmit : nextStep)}
+            onClick={role === 'lgu' ? handleFinalSubmit : (step === 4 ? handleFinalSubmit : nextStep)}
             disabled={loading}
             className="px-12 py-5 bg-brown-gradient text-on-primary rounded-2xl font-bold text-[11px] uppercase tracking-[0.2em] flex items-center gap-4 shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all disabled:opacity-50 group"
           >
-            {loading ? <span className="material-symbols-outlined animate-spin text-lg">progress_activity</span> : (role === 'lgu' || role === 'vet' || step === 4) ? 'Complete Registration' : 'Next Step'}
+            {loading ? <span className="material-symbols-outlined animate-spin text-lg">progress_activity</span> : (role === 'lgu' || step === 4) ? 'Complete Registration' : 'Next Step'}
             {!loading && <span className="material-symbols-outlined text-lg group-hover:translate-x-1 transition-transform">arrow_forward</span>}
           </button>
         </div>

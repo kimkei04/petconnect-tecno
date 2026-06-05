@@ -41,8 +41,6 @@ export default function EditPet() {
     const loggedInUser = JSON.parse(localStorage.getItem('user') || '{}')
     if (loggedInUser.role === 'lgu' || loggedInUser.role === 'admin') {
       return navigate('/lgu')
-    } else if (loggedInUser.role === 'vet') {
-      return navigate('/vet')
     }
     
     if (!isNew) {
@@ -377,7 +375,7 @@ export default function EditPet() {
                       <input 
                         value={c.relationship || ''} 
                         onChange={e => handleContactChange(i, 'relationship', e.target.value)} 
-                        placeholder="e.g. Co-owner, Vet" 
+                        placeholder="e.g. Co-owner, Neighbor" 
                         className="w-full bg-white border border-surface-container rounded-xl p-3 text-xs font-bold outline-none" 
                       />
                     </div>

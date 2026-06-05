@@ -14,7 +14,6 @@ import EditPet from './pages/EditPet'
 import PublicPetProfile from './pages/PublicPetProfile'
 import LostPet from './pages/LostPet'
 import LguDashboard from './pages/LguDashboard'
-import VetDashboard from './pages/VetDashboard'
 import CommunityLostPets from './pages/CommunityLostPets'
 import ReportSighting from './pages/ReportSighting'
 import AdoptionGallery from './pages/AdoptionGallery'
@@ -53,7 +52,7 @@ function App() {
           </ProtectedRoute>
         } />
         <Route path="/dashboard/settings" element={
-          <ProtectedRoute allowedRoles={['owner', 'vet', 'lgu', 'admin']}>
+          <ProtectedRoute allowedRoles={['owner', 'lgu', 'admin']}>
             <Settings />
           </ProtectedRoute>
         } />
@@ -68,7 +67,7 @@ function App() {
           </ProtectedRoute>
         } />
         <Route path="/pet/:id" element={
-          <ProtectedRoute allowedRoles={['owner', 'vet']}>
+          <ProtectedRoute allowedRoles={['owner']}>
             <PetProfile />
           </ProtectedRoute>
         } />
@@ -95,12 +94,7 @@ function App() {
           </ProtectedRoute>
         } />
 
-        {/* Veterinarian Routes (Protected) */}
-        <Route path="/vet" element={
-          <ProtectedRoute allowedRoles={['vet']}>
-            <VetDashboard />
-          </ProtectedRoute>
-        } />
+
 
         {/* Catch All */}
         <Route path="*" element={<Navigate to="/" />} />

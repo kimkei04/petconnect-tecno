@@ -39,8 +39,8 @@ router.get('/pet/:petId', async (req, res) => {
   }
 });
 
-// Administer vaccination (Vets and LGU admins only)
-router.post('/', requireRole(['vet', 'lgu', 'admin']), async (req, res) => {
+// Administer vaccination (LGU admins only)
+router.post('/', requireRole(['lgu', 'admin']), async (req, res) => {
   try {
     const { pet_id, vaccine_name, date_given, next_due_date, clinic_name, batch_number, campaign_id, notes } = req.body;
     

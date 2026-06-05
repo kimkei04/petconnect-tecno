@@ -22,8 +22,6 @@ export default function PetProfile() {
     const loggedInUser = JSON.parse(localStorage.getItem('user') || '{}')
     if (loggedInUser.role === 'lgu' || loggedInUser.role === 'admin') {
       return navigate('/lgu')
-    } else if (loggedInUser.role === 'vet') {
-      return navigate('/vet')
     }
     
     getPet(id)

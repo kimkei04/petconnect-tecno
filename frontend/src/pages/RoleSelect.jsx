@@ -15,7 +15,7 @@ export default function RoleSelect() {
         </div>
 
         {/* Role Selection Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
           {/* Pet Owner Card */}
           <Link
             to="/login?role=owner"
@@ -28,22 +28,6 @@ export default function RoleSelect() {
             <p className="text-xs text-on-surface-variant font-light mb-6 leading-relaxed">Protect your beloved companions with digital profiles and smart alerts.</p>
             <div className="flex items-center gap-2 text-primary font-semibold group-hover:gap-4 transition-all uppercase text-[10px] tracking-widest mt-auto">
               <span>Enter Portal</span>
-              <span className="material-symbols-outlined text-xs">arrow_forward</span>
-            </div>
-          </Link>
-
-          {/* Veterinarian Card */}
-          <Link
-            to="/login?role=vet"
-            className="premium-card p-8 flex flex-col items-center text-center group"
-          >
-            <div className="w-16 h-16 bg-tertiary-container rounded-2xl flex items-center justify-center mb-6 group-hover:bg-tertiary group-hover:text-on-tertiary transition-all duration-500 shadow-sm">
-              <span className="material-symbols-outlined text-2xl text-tertiary group-hover:text-on-tertiary group-hover:rotate-12 transition-all">medical_services</span>
-            </div>
-            <h2 className="text-xl font-serif-elegant font-bold text-on-surface mb-3">Veterinarian</h2>
-            <p className="text-xs text-on-surface-variant font-light mb-6 leading-relaxed">Administer vaccinations, update medical records, and issue verified health certificates.</p>
-            <div className="flex items-center gap-2 text-tertiary font-semibold group-hover:gap-4 transition-all uppercase text-[10px] tracking-widest mt-auto">
-              <span>Vet Portal</span>
               <span className="material-symbols-outlined text-xs">arrow_forward</span>
             </div>
           </Link>
@@ -72,12 +56,12 @@ export default function RoleSelect() {
             <div className="space-y-3">
               <h4 className="font-bold text-on-surface text-sm flex items-center gap-2">
                 <span className="material-symbols-outlined text-tertiary text-base">verified</span>
-                For Pet Owners & Vets
+                For Pet Owners
               </h4>
               <ul className="text-xs text-on-surface-variant space-y-2 font-light">
                 <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 bg-primary/30 rounded-full"></span> Register multiple pets & link NFC tags</li>
                 <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 bg-primary/30 rounded-full"></span> Instant scan GPS location sharing</li>
-                <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 bg-primary/30 rounded-full"></span> Verified digital health & vaccination certificates</li>
+                <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 bg-primary/30 rounded-full"></span> Self-report vaccinations and pet medical profiles</li>
               </ul>
             </div>
             <div className="space-y-3">

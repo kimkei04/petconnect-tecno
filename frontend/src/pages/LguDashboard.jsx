@@ -25,7 +25,6 @@ export default function LguDashboard() {
     total_pets: 0,
     lost_pets: 0,
     total_owners: 0,
-    total_vets: 0,
     strays_open: 0,
     reunited_total: 0,
     scans_total: 0,
@@ -246,8 +245,8 @@ export default function LguDashboard() {
               <p className="text-2xl font-bold text-primary mt-1">+{stats.new_this_month}</p>
             </div>
             <div className="p-4 bg-surface-container-low/50 rounded-2xl border border-surface-container/30">
-              <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Veterinarians Connected</p>
-              <p className="text-2xl font-bold text-tertiary mt-1">{stats.total_vets}</p>
+              <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Reunited Pets</p>
+              <p className="text-2xl font-bold text-tertiary mt-1">{stats.reunited_total}</p>
             </div>
           </div>
         </div>

@@ -57,12 +57,7 @@ export const getLguAdoptions = ()      => API.get('/lgu/adoptions')
 export const createLguAdoption = data  => API.post('/lgu/adoptions', data)
 export const updateLguAdoption = (id, data) => API.put(`/lgu/adoptions/${id}`, data)
 
-// ── Veterinary Clinic Portal ───────────────────────────
-export const getVetStats  = ()         => API.get('/vet/stats')
-export const getVetPatients = ()       => API.get('/vet/patients')
-export const searchPatientByTag = tagId => API.get(`/vet/search-patient/${tagId}`)
-export const addVaccination = data     => API.post('/vaccinations', data)
-export const addMedicalRecord = data   => API.post('/medical', data)
+
 
 // ── Adoption Gallery ────────────────────────────────────
 export const getPublicAdoptions = ()   => API.get('/public/adoptions')

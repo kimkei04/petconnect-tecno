@@ -26,7 +26,7 @@ DROP TABLE IF EXISTS `alerts`;
 -- Check if columns exist first or just drop/recreate them? Since users contains passwords, we alter them.
 -- In case the columns exist already, ALTER TABLE might fail. Let's make sure it's clean by resetting first.
 -- We already reset the DB using `petconnect_lahug.sql`. So users does NOT have these columns yet.
-ALTER TABLE `users` MODIFY COLUMN `role` ENUM('owner', 'lgu', 'vet', 'admin') DEFAULT 'owner';
+ALTER TABLE `users` MODIFY COLUMN `role` ENUM('owner', 'lgu', 'admin') DEFAULT 'owner';
 ALTER TABLE `users` ADD COLUMN `barangay` VARCHAR(100) DEFAULT NULL AFTER `role`;
 ALTER TABLE `users` ADD COLUMN `clinic_name` VARCHAR(255) DEFAULT NULL AFTER `barangay`;
 ALTER TABLE `users` ADD COLUMN `license_number` VARCHAR(100) DEFAULT NULL AFTER `clinic_name`;

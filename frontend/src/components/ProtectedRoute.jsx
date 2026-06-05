@@ -13,9 +13,6 @@ export default function ProtectedRoute({ children, allowedRoles }) {
     if (user.role === 'lgu' || user.role === 'admin') {
       return <Navigate to="/lgu" replace />;
     }
-    if (user.role === 'vet') {
-      return <Navigate to="/vet" replace />;
-    }
     return <Navigate to="/dashboard" replace />;
   }
 
