@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import ScrollToTop from './components/ScrollToTop'
+import ProtectedRoute from './components/ProtectedRoute'
 import Landing from './pages/Landing'
 import RoleSelect from './pages/RoleSelect'
 import Login from './pages/Login'
@@ -13,6 +14,10 @@ import EditPet from './pages/EditPet'
 import PublicPetProfile from './pages/PublicPetProfile'
 import LostPet from './pages/LostPet'
 import LguDashboard from './pages/LguDashboard'
+import CommunityLostPets from './pages/CommunityLostPets'
+import ReportSighting from './pages/ReportSighting'
+import AdoptionGallery from './pages/AdoptionGallery'
+import PetTransfer from './pages/PetTransfer'
 import './index.css'
 
 function App() {
@@ -20,20 +25,78 @@ function App() {
     <BrowserRouter>
       <ScrollToTop />
       <Routes>
+        {/* Public Routes */}
         <Route path="/" element={<Landing />} />
         <Route path="/role-select" element={<RoleSelect />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/dashboard/pets" element={<MyPets />} />
-        <Route path="/dashboard/alerts" element={<Alerts />} />
-        <Route path="/dashboard/settings" element={<Settings />} />
-        <Route path="/pet/new" element={<EditPet />} />
-        <Route path="/pet/:id/edit" element={<EditPet />} />
-        <Route path="/pet/:id" element={<PetProfile />} />
         <Route path="/tag/:tagId" element={<PublicPetProfile />} />
-        <Route path="/lost/:id" element={<LostPet />} />
-        <Route path="/lgu" element={<LguDashboard />} />
+        <Route path="/community/lost" element={<CommunityLostPets />} />
+        <Route path="/sighting/:reportId" element={<ReportSighting />} />
+        <Route path="/adoptions" element={<AdoptionGallery />} />
+
+        {/* Pet Owner Routes (Protected) */}
+        <Route path="/dashboard" element={
+          <ProtectedRoute allowedRoles={['owner']}>
+            <Dashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/dashboard/pets" element={
+          <ProtectedRoute allowedRoles={['owner']}>
+            <MyPets />
+          </ProtectedRoute>
+        } />
+        <Route path="/dashboard/alerts" element={
+          <ProtectedRoute allowedRoles={['owner']}>
+            <Alerts />
+          </ProtectedRoute>
+        } />
+        <Route path="/dashboard/settings" element={
+          <ProtectedRoute allowedRoles={['owner', 'lgu', 'admin']}>
+            <Settings />
+          </ProtectedRoute>
+        } />
+        <Route path="/pet/new" element={
+          <ProtectedRoute allowedRoles={['owner']}>
+            <EditPet />
+          </ProtectedRoute>
+        } />
+        <Route path="/pet/:id/edit" element={
+          <ProtectedRoute allowedRoles={['owner']}>
+            <EditPet />
+          </ProtectedRoute>
+        } />
+        <Route path="/pet/:id" element={
+          <ProtectedRoute allowedRoles={['owner']}>
+            <PetProfile />
+          </ProtectedRoute>
+        } />
+        <Route path="/lost/:id" element={
+          <ProtectedRoute allowedRoles={['owner']}>
+            <LostPet />
+          </ProtectedRoute>
+        } />
+        <Route path="/pet/transfer" element={
+          <ProtectedRoute allowedRoles={['owner']}>
+            <PetTransfer />
+          </ProtectedRoute>
+        } />
+        <Route path="/pet/:id/transfer" element={
+          <ProtectedRoute allowedRoles={['owner']}>
+            <PetTransfer />
+          </ProtectedRoute>
+        } />
+
+        {/* LGU Admin Routes (Protected) */}
+        <Route path="/lgu" element={
+          <ProtectedRoute allowedRoles={['lgu', 'admin']}>
+            <LguDashboard />
+          </ProtectedRoute>
+        } />
+
+
+
+        {/* Catch All */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </BrowserRouter>

@@ -1,32 +1,43 @@
 import express from 'express';
 import db from '../db.js';
-import jwt from 'jsonwebtoken';
+import auth from '../middleware/auth.js';
 
 const router = express.Router();
 
-const auth = (req, res, next) => {
-  const token = req.headers.authorization?.split(' ')[1];
-  if (!token) return res.status(401).json({ message: 'No token' });
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
-    req.userId = decoded.id;
-    next();
-  } catch (err) {
-    res.status(401).json({ message: 'Invalid token' });
-  }
-};
-
+// Get user notifications/alerts
 router.get('/', auth, async (req, res) => {
-  const [rows] = await db.query(
-    'SELECT a.* FROM alerts a JOIN pets p ON a.pet_id = p.id WHERE p.owner_id = ? ORDER BY a.created_at DESC',
-    [req.userId]
-  );
-  res.json(rows);
+  try {
+    const [rows] = await db.query(
+      'SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC',
+      [req.userId]
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error('Get Notifications Error:', err);
+    res.status(500).json({ message: 'Failed to retrieve alerts' });
+  }
 });
 
+// Mark alert as read
 router.patch('/:id/read', auth, async (req, res) => {
-  await db.query('UPDATE alerts SET is_read = TRUE WHERE id = ?', [req.params.id]);
-  res.json({ message: 'Alert marked as read' });
+  try {
+    await db.query('UPDATE notifications SET is_read = TRUE WHERE id = ? AND user_id = ?', [req.params.id, req.userId]);
+    res.json({ message: 'Alert marked as read' });
+  } catch (err) {
+    console.error('Mark Alert Read Error:', err);
+    res.status(500).json({ message: 'Failed to mark alert as read' });
+  }
+});
+
+// Delete alert
+router.delete('/:id', auth, async (req, res) => {
+  try {
+    await db.query('DELETE FROM notifications WHERE id = ? AND user_id = ?', [req.params.id, req.userId]);
+    res.json({ message: 'Alert deleted successfully' });
+  } catch (err) {
+    console.error('Delete Alert Error:', err);
+    res.status(500).json({ message: 'Failed to delete alert' });
+  }
 });
 
 export default router;

@@ -31,18 +31,41 @@ export const deletePet   = id         => API.delete(`/pets/${id}`)
 
 // ── Public tag scan ─────────────────────────────────────
 export const getPublicTag = tagId => API.get(`/public/tag/${tagId}`)
+export const submitScanLog = (tagId, data) => API.post(`/public/scan/${tagId}`, data)
+export const submitScanMessage = (tagId, data) => API.post(`/public/message/${tagId}`, data)
 
-// ── Alerts ──────────────────────────────────────────────
+// ── Alerts / Notifications ──────────────────────────────
 export const getAlerts   = ()         => API.get('/alerts')
 export const markRead    = id         => API.patch(`/alerts/${id}/read`)
+export const deleteAlert = id         => API.delete(`/alerts/${id}`)
 
-// ── Lost pets ───────────────────────────────────────────
-export const getLostPets  = ()         => API.get('/lost')
+// ── Lost pets & Sightings ───────────────────────────────
+export const getLostPets  = ()         => API.get('/public/lost')
 export const reportLost   = (id, data) => API.post(`/pets/${id}/lost`, data)
 export const resolvedLost = id         => API.post(`/pets/${id}/found`)
+export const submitSighting = (reportId, data) => API.post(`/public/sighting/${reportId}`, data)
 
 // ── LGU Dashboard ───────────────────────────────────────
 export const getLguStats  = ()         => API.get('/lgu/stats')
 export const getLguAlerts = ()         => API.get('/lgu/alerts')
+export const getLguStrays = ()         => API.get('/lgu/strays')
+export const updateLguStray = (id, data) => API.put(`/lgu/strays/${id}`, data)
+export const getLguCampaigns = ()      => API.get('/lgu/campaigns')
+export const createLguCampaign = data  => API.post('/lgu/campaigns', data)
+export const deleteLguCampaign = id    => API.delete(`/lgu/campaigns/${id}`)
+export const getLguAdoptions = ()      => API.get('/lgu/adoptions')
+export const createLguAdoption = data  => API.post('/lgu/adoptions', data)
+export const updateLguAdoption = (id, data) => API.put(`/lgu/adoptions/${id}`, data)
+
+
+
+// ── Adoption Gallery ────────────────────────────────────
+export const getPublicAdoptions = ()   => API.get('/public/adoptions')
+
+// ── Ownership Transfers ─────────────────────────────────
+export const getMyTransfers   = ()     => API.get('/transfers/my-transfers')
+export const initiateTransfer = data   => API.post('/transfers', data)
+export const acceptTransfer   = id     => API.post(`/transfers/${id}/accept`)
+export const rejectTransfer   = id     => API.post(`/transfers/${id}/reject`)
 
 export default API

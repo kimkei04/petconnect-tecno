@@ -22,7 +22,6 @@ export default function Login() {
       const res = await login({ ...form, role })
       localStorage.setItem('token', res.data.token)
       localStorage.setItem('user', JSON.stringify(res.data.user))
-      
       // Redirect based on role
       if (res.data.user.role === 'lgu' || res.data.user.role === 'admin') {
         navigate('/lgu')
@@ -49,7 +48,7 @@ export default function Login() {
             <span className="text-gradient">PetConnect</span>
           </Link>
           <h1 className="mt-8 text-3xl md:text-4xl font-serif-elegant font-bold text-on-surface tracking-tight">
-            {role === 'lgu' ? 'Admin Portal' : 'Welcome back'}
+            {role === 'lgu' ? 'LGU Admin Portal' : 'Welcome back'}
           </h1>
           <p className="mt-3 text-on-surface-variant font-light">
             {role === 'lgu' ? 'Sign in to manage community pet safety' : 'Sign in to access your pet dashboard'}
@@ -130,7 +129,7 @@ export default function Login() {
         <div className="mt-8 text-center">
           <Link to="/role-select" className="inline-flex items-center gap-2 text-xs font-bold text-on-surface-variant/60 hover:text-primary transition-colors uppercase tracking-widest">
             <span className="material-symbols-outlined text-sm">swap_horiz</span>
-            Switch to {role === 'lgu' ? 'Pet Owner' : 'LGU Admin'}
+            Switch Role
           </Link>
         </div>
       </div>

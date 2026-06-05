@@ -46,7 +46,7 @@ CREATE TABLE `alerts` (
 
 LOCK TABLES `alerts` WRITE;
 /*!40000 ALTER TABLE `alerts` DISABLE KEYS */;
-INSERT INTO `alerts` VALUES (1,1,'scan','Cooper Scanned!','Someone scanned Cooper\'s tag near IT Park, Cebu City.',0,'2026-05-03 08:00:19');
+INSERT INTO `alerts` (id, pet_id, type, title, message, is_read, created_at) VALUES (1,1,'scan','Cooper Scanned!','Someone scanned Cooper\'s tag near IT Park, Cebu City.',0,'2026-05-03 08:00:19');
 /*!40000 ALTER TABLE `alerts` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -92,7 +92,7 @@ CREATE TABLE `pets` (
 
 LOCK TABLES `pets` WRITE;
 /*!40000 ALTER TABLE `pets` DISABLE KEYS */;
-INSERT INTO `pets` VALUES (1,1,'PTC-8829-X','Cooper','Dog','Golden Retriever',2,NULL,NULL,'https://images.unsplash.com/photo-1552053831-71594a27632d',NULL,NULL,0,'healthy',NULL,0,'2026-05-03 08:00:19'),(2,1,'PTC-1120-L','Luna','Dog','Domestic Shorthair',4,NULL,NULL,'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba',NULL,NULL,0,'healthy',NULL,0,'2026-05-03 08:00:19'),(3,10,'PTC-9622-B','Bruno','Dog','Beagle',NULL,NULL,NULL,NULL,NULL,NULL,0,'healthy',NULL,NULL,'2026-05-29 09:49:25');
+INSERT INTO `pets` (id, owner_id, tag_id, name, species, breed, age, weight, color, photo_url, medical_conditions, vaccines, vaccine_due, status, last_seen_location, hide_phone, created_at) VALUES (1,1,'PTC-8829-X','Cooper','Dog','Golden Retriever',2,NULL,NULL,'https://images.unsplash.com/photo-1552053831-71594a27632d',NULL,NULL,0,'healthy',NULL,0,'2026-05-03 08:00:19'),(2,1,'PTC-1120-L','Luna','Dog','Domestic Shorthair',4,NULL,NULL,'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba',NULL,NULL,0,'healthy',NULL,0,'2026-05-03 08:00:19'),(3,10,'PTC-9622-B','Bruno','Dog','Beagle',NULL,NULL,NULL,NULL,NULL,NULL,0,'healthy',NULL,NULL,'2026-05-29 09:49:25');
 /*!40000 ALTER TABLE `pets` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -124,7 +124,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (1,'Sarah Miller','sarah@example.com','+63 912 345 6789','hashed_password_here','owner','2026-05-03 08:00:19'),(2,'Cebu City LGU','admin@cebu.gov.ph','032-123-4567','$2b$10$Uxw0aJE58bZ8iyVzCf.RguDEmwDniG/24598UdqXZNcx3cWY4H8My','lgu','2026-05-03 08:00:19'),(5,'Binisa','binisa@test.com','09945379278','$2b$10$6iMVFnNBeyiISFDF/F5yjON0P1iIABB38s2BhibHwjz31eAf4T8Mi','owner','2026-05-03 08:27:07'),(7,'Joa Kim','joakim@test.com','12346937590','$2b$10$TeTugQYri9gzHEQzW9fk2eMZSIsBGUQsLsU0PAPuagOlER8Gzn0pC','owner','2026-05-07 07:24:22'),(8,'Admin','admin@petconnect.com','','$2b$10$Uxw0aJE58bZ8iyVzCf.RguDEmwDniG/24598UdqXZNcx3cWY4H8My','lgu','2026-05-07 07:46:03'),(9,'Bea Benessa','bea@email.com','','$2b$10$3X6cCmwxr5kKvIVzCA8iVeiJQ.WXGQeEegh6aY62iXLo2aQBXgw1C','owner','2026-05-07 11:15:38'),(10,'Kim Aguilar','kim@lguadmin.com','','$2b$10$E/4f2e5FqaGRkRJUDWsLx.0fWXMMk2T/0nFj.cqx5Y51CMlKIpHg.','owner','2026-05-29 09:49:25');
+INSERT INTO `users` (id, name, email, phone, password, role, created_at) VALUES (1,'Sarah Miller','sarah@example.com','+63 912 345 6789','hashed_password_here','owner','2026-05-03 08:00:19'),(2,'Cebu City LGU','admin@cebu.gov.ph','032-123-4567','$2b$10$Uxw0aJE58bZ8iyVzCf.RguDEmwDniG/24598UdqXZNcx3cWY4H8My','lgu','2026-05-03 08:00:19'),(5,'Binisa','binisa@test.com','09945379278','$2b$10$6iMVFnNBeyiISFDF/F5yjON0P1iIABB38s2BhibHwjz31eAf4T8Mi','owner','2026-05-03 08:27:07'),(7,'Joa Kim','joakim@test.com','12346937590','$2b$10$TeTugQYri9gzHEQzW9fk2eMZSIsBGUQsLsU0PAPuagOlER8Gzn0pC','owner','2026-05-07 07:24:22'),(8,'Admin','admin@petconnect.com','','$2b$10$Uxw0aJE58bZ8iyVzCf.RguDEmwDniG/24598UdqXZNcx3cWY4H8My','lgu','2026-05-07 07:46:03'),(9,'Bea Benessa','bea@email.com','','$2b$10$3X6cCmwxr5kKvIVzCA8iVeiJQ.WXGQeEegh6aY62iXLo2aQBXgw1C','owner','2026-05-07 11:15:38'),(10,'Kim Aguilar','kim@lguadmin.com','','$2b$10$E/4f2e5FqaGRkRJUDWsLx.0fWXMMk2T/0nFj.cqx5Y51CMlKIpHg.','owner','2026-05-29 09:49:25');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;

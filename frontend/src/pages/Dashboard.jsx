@@ -12,50 +12,21 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!localStorage.getItem('token')) return navigate('/login')
+    const loggedInUser = JSON.parse(localStorage.getItem('user') || '{}')
+    if (loggedInUser.role === 'lgu' || loggedInUser.role === 'admin') {
+      return navigate('/lgu')
+    }
+    
     Promise.all([getPets(), getAlerts()])
       .then(([pRes, aRes]) => {
-        const fetchedPets = pRes.data?.length ? pRes.data : [
-          { id: 1, name: 'Buddy', breed: 'Golden Retriever', age: 3, status: 'healthy', photo_url: 'https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&q=80&w=400', vaccines: JSON.stringify([{name: 'Rabies', next_due: new Date(Date.now() + 432000000).toISOString().split('T')[0]}]) },
-          { id: 2, name: 'Milo', breed: 'Beagle', age: 2, status: 'lost', photo_url: 'https://images.unsplash.com/photo-1537151608828-ea2b11777ee8?auto=format&fit=crop&q=80&w=400' },
-          { id: 3, name: 'Cleo', breed: 'Siamese Cat', age: 4, status: 'healthy', photo_url: 'https://images.unsplash.com/photo-1513245543132-31f507417b26?auto=format&fit=crop&q=80&w=400' }
-        ];
-        setPets(fetchedPets);
-        
-        // Generate proactive reminders for upcoming vaccines
-        const proactiveReminders = [];
-        fetchedPets.forEach(pet => {
-           try {
-              if (pet.vaccines && pet.vaccines.startsWith('[')) {
-                 const vax = JSON.parse(pet.vaccines);
-                 vax.forEach(v => {
-                    const due = new Date(v.next_due);
-                    const diff = (due - new Date()) / (1000 * 60 * 60 * 24);
-                    if (diff > 0 && diff <= 14) {
-                       proactiveReminders.push({
-                          id: `vax-${pet.id}-${v.name}`,
-                          title: 'Vaccine Due Soon',
-                          message: `${pet.name} is due for ${v.name} on ${v.next_due}.`,
-                          type: 'vaccine',
-                          created_at: new Date().toISOString(),
-                          is_proactive: true
-                       });
-                    }
-                 });
-              }
-           } catch (e) {}
-        });
-
-        const fetchedAlerts = aRes.data?.length ? aRes.data : [
-          { id: 1, title: 'Pet Scanned!', message: 'Milo was scanned near IT Park, Cebu City.', type: 'scan', created_at: new Date().toISOString(), is_read: false, latitude: 10.3291, longitude: 123.9061 },
-          { id: 2, title: 'Vaccine Reminder', message: 'Buddy is due for Rabies vaccination.', type: 'vaccine', created_at: new Date(Date.now() - 172800000).toISOString(), is_read: true }
-        ];
-        setAlerts([...proactiveReminders, ...fetchedAlerts]);
+        setPets(pRes.data || [])
+        setAlerts(aRes.data || [])
       })
-      .catch(() => {
-        // Fallback already handled in Promise.all .then for demo consistency
+      .catch((err) => {
+        console.error('Failed to load dashboard data:', err)
       })
       .finally(() => setLoading(false))
-  }, [])
+  }, [navigate])
 
   const lostPets = pets.filter(p => p.status === 'lost');
 
@@ -68,7 +39,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="bg-surface min-h-screen pb-40 selection:bg-primary-container selection:text-primary">
+    <div className="bg-surface min-h-screen pb-40 selection:bg-primary-container selection:text-primary font-sans">
       {/* Header */}
       <header className="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-md border-b border-surface-container/30 soft-shadow h-[72px] flex items-center">
         <div className="flex justify-between items-center px-6 md:px-10 max-w-7xl mx-auto w-full">
@@ -83,9 +54,9 @@ export default function Dashboard() {
                 <span className="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border-2 border-surface"></span>
               )}
             </Link>
-            <button className="w-9 h-9 rounded-full bg-primary-container border border-primary/20 text-primary font-bold text-sm shadow-sm hover:shadow transition-all">
+            <Link to="/dashboard/settings" className="w-9 h-9 rounded-full bg-primary-container border border-primary/20 text-primary font-bold text-sm shadow-sm hover:shadow transition-all flex items-center justify-center">
               {user.name?.charAt(0) || 'U'}
-            </button>
+            </Link>
           </div>
         </div>
       </header>
@@ -126,39 +97,66 @@ export default function Dashboard() {
             <Link to="/dashboard/pets" className="text-[11px] font-semibold text-primary uppercase tracking-[0.08em] hover:underline">View All</Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {pets.map(pet => (
-              <div key={pet.id} className="premium-card group rounded-2xl overflow-hidden bg-white border border-surface-container/50">
-                <div className="h-56 relative overflow-hidden">
-                  <img src={pet.photo_url} alt={pet.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                  <span className={`absolute top-4 right-4 text-[11px] font-semibold uppercase tracking-[0.08em] px-2 py-1 rounded-full shadow-lg backdrop-blur-md ${statusStyle(pet.status)}`}>
-                    {pet.status}
-                  </span>
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2].map(i => (
+                <div key={i} className="h-72 rounded-3xl bg-white border border-surface-container animate-pulse flex flex-col justify-between p-6">
+                  <div className="w-full h-40 bg-surface-container-low rounded-2xl"></div>
+                  <div className="w-1/2 h-4 bg-surface-container-low rounded-full mt-4"></div>
                 </div>
-                <div className="p-5">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h3 className="text-xl font-semibold text-on-surface group-hover:text-primary transition-colors">{pet.name}</h3>
-                      <p className="text-on-surface-variant text-[13px] font-normal mt-1">{pet.breed} • {pet.age} {pet.age === 1 ? 'year' : 'years'}</p>
+              ))}
+            </div>
+          ) : pets.length === 0 ? (
+            <div className="text-center py-20 border border-dashed border-surface-container rounded-[2.5rem] bg-white/50 space-y-4">
+              <span className="material-symbols-outlined text-5xl text-on-surface-variant/20 font-light">volunteer_activism</span>
+              <h3 className="font-serif-elegant font-bold text-on-surface text-lg">No Pets Registered Yet</h3>
+              <p className="text-xs text-on-surface-variant font-light px-6">Link your pet's NFC tag or register their profile to start protecting them.</p>
+              <Link to="/pet/new" className="inline-block py-3.5 px-8 bg-brown-gradient text-on-primary font-bold text-xs uppercase tracking-widest rounded-xl hover:shadow transition-all mt-4">
+                Register First Pet
+              </Link>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {pets.map(pet => (
+                <div key={pet.id} className="premium-card group rounded-2xl overflow-hidden bg-white border border-surface-container/50">
+                  <div className="h-56 relative overflow-hidden bg-surface-container-low">
+                    {pet.photo_url ? (
+                      <img src={pet.photo_url} alt={pet.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center text-on-surface-variant/25 gap-2">
+                        <span className="material-symbols-outlined text-5xl">pets</span>
+                        <span className="text-[10px] font-bold uppercase tracking-widest">No Photo</span>
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                    <span className={`absolute top-4 right-4 text-[11px] font-semibold uppercase tracking-[0.08em] px-2.5 py-1 rounded-full shadow-lg backdrop-blur-md ${statusStyle(pet.status)}`}>
+                      {pet.status}
+                    </span>
+                  </div>
+                  <div className="p-5">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h3 className="text-xl font-semibold text-on-surface group-hover:text-primary transition-colors">{pet.name}</h3>
+                        <p className="text-on-surface-variant text-[13px] font-normal mt-1">{pet.breed || 'Companion'} • {pet.sex || 'Unknown'}</p>
+                      </div>
+                      <div className="w-10 h-10 bg-surface-container-low rounded-xl flex items-center justify-center text-primary/40 group-hover:text-primary group-hover:bg-primary-container transition-all">
+                        <span className="material-symbols-outlined text-xl">nfc</span>
+                      </div>
                     </div>
-                    <div className="w-10 h-10 bg-surface-container-low rounded-xl flex items-center justify-center text-primary/40 group-hover:text-primary group-hover:bg-primary-container transition-all">
-                      <span className="material-symbols-outlined text-xl">nfc</span>
+                    <div className="flex items-center justify-between pt-4 border-t border-surface-container/50">
+                      <Link to={`/pet/${pet.id}/edit`} className="flex items-center gap-2 text-[11px] font-semibold text-on-surface-variant uppercase tracking-[0.08em] hover:text-primary transition-colors">
+                        <span className="material-symbols-outlined text-lg">edit_note</span>
+                        Edit Profile
+                      </Link>
+                      <Link to={`/pet/${pet.id}`} className="w-9 h-9 rounded-full bg-surface-container-low flex items-center justify-center text-on-surface-variant group-hover:bg-primary group-hover:text-on-primary transition-all shadow-sm">
+                        <span className="material-symbols-outlined text-lg">arrow_forward</span>
+                      </Link>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between pt-4 border-t border-surface-container/50">
-                    <Link to={`/pet/${pet.id}/edit`} className="flex items-center gap-2 text-[11px] font-semibold text-on-surface-variant uppercase tracking-[0.08em] hover:text-primary transition-colors">
-                      <span className="material-symbols-outlined text-lg">edit_note</span>
-                      Edit Profile
-                    </Link>
-                    <Link to={`/pet/${pet.id}`} className="w-9 h-9 rounded-full bg-surface-container-low flex items-center justify-center text-on-surface-variant group-hover:bg-primary group-hover:text-on-primary transition-all shadow-sm">
-                      <span className="material-symbols-outlined text-lg">arrow_forward</span>
-                    </Link>
-                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* Recent Activity */}
@@ -168,20 +166,19 @@ export default function Dashboard() {
             <h2 className="text-[20px] font-semibold text-on-surface">Recent Activity</h2>
           </div>
           <div className="space-y-3">
-            {alerts.map((alert, i) => (
-              <div key={alert.id || i} className={`p-5 rounded-xl flex items-start gap-4 shadow-sm border transition-colors ${alert.is_proactive ? 'bg-primary/5 border-primary/20' : 'bg-white/80 border-surface-container/30 hover:border-primary/20'}`}>
-                <div className={`mt-1 w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${alert.type === 'scan' ? 'bg-error/10 text-error' : 'bg-primary/10 text-primary'}`}>
-                  <span className="material-symbols-outlined text-xl">{alert.type === 'scan' ? 'location_on' : 'vaccines'}</span>
+            {alerts.slice(0, 5).map((alert, i) => (
+              <div key={alert.id || i} className="p-5 rounded-xl flex items-start gap-4 shadow-sm border bg-white/80 border-surface-container/30 hover:border-primary/20 transition-all">
+                <div className={`mt-1 w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${alert.type === 'scan' ? 'bg-error/10 text-error' : alert.type === 'sighting' ? 'bg-secondary/10 text-secondary' : 'bg-primary/10 text-primary'}`}>
+                  <span className="material-symbols-outlined text-xl">
+                    {alert.type === 'scan' ? 'location_on' : alert.type === 'sighting' ? 'visibility' : 'notifications'}
+                  </span>
                 </div>
                 <div className="flex-1">
                   <div className="flex justify-between items-center mb-1">
-                    <div className="flex items-center gap-2">
-                       <h4 className="font-semibold text-on-surface text-[15px]">{alert.title}</h4>
-                       {alert.is_proactive && <span className="bg-primary text-[8px] text-white px-2 py-0.5 rounded-full font-bold uppercase tracking-widest">Auto</span>}
-                    </div>
+                    <h4 className="font-semibold text-on-surface text-[15px]">{alert.title}</h4>
                     <span className="text-[12px] font-normal text-on-surface-variant/40">{new Date(alert.created_at).toLocaleDateString()}</span>
                   </div>
-                  <p className="text-[13px] text-on-surface-variant font-normal leading-relaxed">{alert.message}</p>
+                  <p className="text-[13px] text-on-surface-variant font-light leading-relaxed">{alert.message}</p>
                 </div>
               </div>
             ))}
