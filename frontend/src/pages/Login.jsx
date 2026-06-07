@@ -30,7 +30,7 @@ export default function Login() {
       }
     } catch (err) {
       if (!err.response) {
-        setError(`Connection Refused. Please ensure the backend is running and your phone can reach ${window.location.hostname}:5000`);
+        setError('Unable to connect to the server. Please check your internet connection and try again.');
       } else {
         setError(err.response?.data?.message || 'Login failed. Please try again.');
       }
