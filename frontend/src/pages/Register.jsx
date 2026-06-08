@@ -93,18 +93,27 @@ export default function Register() {
       if (role === 'lgu') {
         navigate('/lgu')
       } else {
-        const petRes = await createPet({
-          name: formData.petName,
-          species: formData.species,
-          breed: formData.breed,
-          note: formData.note,
-          photo_url: formData.previewUrl
-        })
-        setFormData(prev => ({ ...prev, tagId: petRes.data.tag_id, qrUrl: petRes.data.qr_code_url }))
-        setStep(3) // Move to Link Tag Step to show the generated tag
+        try {
+          const petRes = await createPet({
+            name: formData.petName,
+            species: formData.species,
+            breed: formData.breed,
+            note: formData.note,
+            photo_url: formData.previewUrl
+          })
+          const tagId = petRes.data?.tag_id || ''
+          const qrUrl = petRes.data?.qr_code_url || ''
+          setFormData(prev => ({ ...prev, tagId, qrUrl }))
+          setStep(3) // Move to Link Tag Step to show the generated tag
+        } catch (petErr) {
+          console.error('Pet creation error:', petErr)
+          // Account was created but pet failed - still show link tag step with error
+          setError('Account created but pet registration failed. You can add your pet from the dashboard.')
+          setStep(3)
+        }
       }
     } catch (err) {
-      console.error('Registration/Pet creation error:', err)
+      console.error('Registration error:', err)
       if (!err.response) {
         setError(`Connection refused. Start the backend with "npm run dev" from the project root.`)
       } else {
@@ -277,27 +286,43 @@ export default function Register() {
                 </div>
 
                 <div className="bg-white rounded-[2.5rem] p-12 border border-surface-container shadow-xl shadow-primary/5 flex flex-col items-center gap-10">
-                  <div className="w-48 h-48 bg-white border border-surface-container p-4 rounded-3xl shadow-md flex items-center justify-center">
-                    {formData.qrUrl && <QRCode value={formData.qrUrl} size={160} />}
-                  </div>
-                  
-                  <div className="w-full space-y-6">
-                    <div className="space-y-3 text-center">
-                      <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em]">Generated Tag ID</label>
-                      <p className="text-2xl font-bold tracking-[0.1em] text-primary">{formData.tagId}</p>
+                  {formData.tagId ? (
+                    <>
+                      <div className="w-48 h-48 bg-white border border-surface-container p-4 rounded-3xl shadow-md flex items-center justify-center">
+                        {formData.qrUrl ? <QRCode value={formData.qrUrl} size={160} /> : (
+                          <div className="text-center">
+                            <span className="material-symbols-outlined text-6xl text-primary">qr_code_2</span>
+                            <p className="text-[10px] text-on-surface-variant mt-2">QR Code</p>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="w-full space-y-6">
+                        <div className="space-y-3 text-center">
+                          <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em]">Generated Tag ID</label>
+                          <p className="text-2xl font-bold tracking-[0.1em] text-primary">{formData.tagId}</p>
+                        </div>
+                        <div className="space-y-3 text-center">
+                          <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em]">QR Code URL</label>
+                          <p className="text-xs font-medium text-on-surface-variant break-all bg-surface-container-low/50 rounded-2xl p-4">{formData.qrUrl}</p>
+                        </div>
+                        <div className="bg-primary-container/30 rounded-2xl p-5 flex items-start gap-4">
+                          <span className="material-symbols-outlined text-primary text-2xl mt-0.5">info</span>
+                          <p className="text-xs text-on-surface-variant leading-relaxed">
+                            This unique QR code and Tag ID have been automatically generated for <strong>{formData.petName}</strong>. 
+                            Write this Tag ID on your pet's NFC tag, or scan the QR code to access your pet's public profile.
+                          </p>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-center py-8">
+                      <div className="w-20 h-20 bg-surface-container-low rounded-full flex items-center justify-center mx-auto mb-6">
+                        <span className="material-symbols-outlined text-4xl text-on-surface-variant/40">warning</span>
+                      </div>
+                      <p className="text-sm text-on-surface-variant">Tag generation failed. You can generate a tag from your dashboard after adding your pet.</p>
                     </div>
-                    <div className="space-y-3 text-center">
-                      <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em]">QR Code URL</label>
-                      <p className="text-xs font-medium text-on-surface-variant break-all bg-surface-container-low/50 rounded-2xl p-4">{formData.qrUrl}</p>
-                    </div>
-                    <div className="bg-primary-container/30 rounded-2xl p-5 flex items-start gap-4">
-                      <span className="material-symbols-outlined text-primary text-2xl mt-0.5">info</span>
-                      <p className="text-xs text-on-surface-variant leading-relaxed">
-                        This unique QR code and Tag ID have been automatically generated for <strong>{formData.petName}</strong>. 
-                        Write this Tag ID on your pet's NFC tag, or scan the QR code to access your pet's public profile.
-                      </p>
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
             )}
@@ -341,7 +366,7 @@ export default function Register() {
       <footer className="fixed bottom-0 left-0 w-full bg-surface/80 backdrop-blur-xl border-t border-surface-container/50 p-8 z-50">
         <div className="max-w-md mx-auto flex justify-between items-center px-4">
           <button 
-            onClick={step === 4 ? () => {} : (step === 3 ? () => {} : (role === 'lgu' ? () => navigate(`/login?role=${role}`) : prevStep))} 
+            onClick={step <= 2 ? (step === 1 ? (role === 'lgu' ? () => navigate(`/login?role=${role}`) : () => {}) : prevStep) : () => {}} 
             className={`flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.2em] transition-all ${(step === 1 && role !== 'lgu') || step >= 3 ? 'opacity-0 pointer-events-none' : 'text-on-surface-variant hover:text-primary'}`}
           >
             <span className="material-symbols-outlined text-lg">arrow_back</span> Back
