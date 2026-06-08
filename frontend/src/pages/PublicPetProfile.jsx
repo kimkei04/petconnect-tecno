@@ -86,13 +86,13 @@ export default function PublicPetProfile() {
         {/* Profile Hero */}
         <div className="flex flex-col items-center text-center">
           <div className="relative mb-8 group">
-            <div className="absolute inset-0 bg-primary/10 rounded-[3.5rem] blur-2xl group-hover:bg-primary/20 transition-all duration-700"></div>
+            <div className="absolute inset-0 bg-primary/10 rounded-[4.5rem] blur-2xl group-hover:bg-primary/20 transition-all duration-700"></div>
             <img
               src={pet.photo_url || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&q=80&w=400'}
               alt={pet.name}
-              className="relative w-56 h-56 rounded-[3.5rem] object-cover border-8 border-white shadow-2xl transition-all duration-700 hover:scale-[1.02]"
+              className="relative w-72 h-72 rounded-[4.5rem] object-cover border-8 border-white shadow-2xl transition-all duration-700 hover:scale-[1.02]"
             />
-            <div className="absolute -bottom-3 -right-3 w-14 h-14 bg-white rounded-2xl shadow-xl flex items-center justify-center text-primary border border-surface-container-low group-hover:rotate-12 transition-transform">
+            <div className="absolute -bottom-3 -right-3 w-16 h-16 bg-white rounded-2xl shadow-xl flex items-center justify-center text-primary border border-surface-container-low group-hover:rotate-12 transition-transform">
                <span className="material-symbols-outlined text-3xl">nfc</span>
             </div>
           </div>
