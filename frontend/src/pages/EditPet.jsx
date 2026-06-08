@@ -120,13 +120,55 @@ export default function EditPet() {
     setForm(prev => ({ ...prev, [name]: val }))
   }
 
+  const compressImage = (file, callback) => {
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const img = new Image()
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        const MAX_WIDTH = 400
+        const MAX_HEIGHT = 400
+        let width = img.width
+        let height = img.height
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width
+            width = MAX_WIDTH
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height
+            height = MAX_HEIGHT
+          }
+        }
+
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')
+        ctx.drawImage(img, 0, 0, width, height)
+
+        // Start with quality 0.4, reduce further if still too large (max ~500KB base64)
+        let quality = 0.4
+        let result = canvas.toDataURL('image/jpeg', quality)
+        while (result.length > 500000 && quality > 0.1) {
+          quality -= 0.1
+          result = canvas.toDataURL('image/jpeg', quality)
+        }
+        callback(result)
+      }
+      img.src = event.target.result
+    }
+    reader.readAsDataURL(file)
+  }
+
   const handlePetPhotoChange = e => {
     const file = e.target.files[0]
     if (file) {
       setPetPhoto(file)
-      const reader = new FileReader()
-      reader.onloadend = () => setPetPhotoPreview(reader.result)
-      reader.readAsDataURL(file)
+      compressImage(file, (compressedUrl) => {
+        setPetPhotoPreview(compressedUrl)
+      })
     }
   }
 
@@ -138,12 +180,10 @@ export default function EditPet() {
     files.forEach(file => {
       if (newPreviews.length < 4) {
         newImages.push(file)
-        const reader = new FileReader()
-        reader.onloadend = () => {
-          newPreviews.push(reader.result)
+        compressImage(file, (compressedUrl) => {
+          newPreviews.push(compressedUrl)
           setMarkingImagePreviews([...newPreviews])
-        }
-        reader.readAsDataURL(file)
+        })
       }
     })
     setMarkingImages(newImages)
@@ -159,12 +199,20 @@ export default function EditPet() {
     setSaving(true)
     setError('')
     try {
+      // Guard: strip photos that are still too large for Vercel's body limit
+      let safePhoto = petPhotoPreview
+      if (safePhoto && safePhoto.length > 500000) {
+        console.warn('Photo too large even after compression, skipping photo upload')
+        safePhoto = null
+      }
+      let safeMarkings = markingImagePreviews.filter(img => !img || img.length <= 500000)
+
       const payload = {
         ...form,
-        photo_url: petPhotoPreview,
+        photo_url: safePhoto,
         vaccines: vaccineList,
         emergencyContacts: emergencyContacts,
-        marking_images: JSON.stringify(markingImagePreviews)
+        marking_images: JSON.stringify(safeMarkings)
       }
       
       if (isNew) {

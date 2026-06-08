@@ -36,14 +36,54 @@ export default function Register() {
     if (error) setError('')
   }
 
+  const compressImage = (file, callback) => {
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const img = new Image()
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        const MAX_WIDTH = 400
+        const MAX_HEIGHT = 400
+        let width = img.width
+        let height = img.height
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width
+            width = MAX_WIDTH
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height
+            height = MAX_HEIGHT
+          }
+        }
+
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')
+        ctx.drawImage(img, 0, 0, width, height)
+
+        // Start with quality 0.4, reduce further if still too large (max ~500KB base64)
+        let quality = 0.4
+        let result = canvas.toDataURL('image/jpeg', quality)
+        while (result.length > 500000 && quality > 0.1) {
+          quality -= 0.1
+          result = canvas.toDataURL('image/jpeg', quality)
+        }
+        callback(result)
+      }
+      img.src = event.target.result
+    }
+    reader.readAsDataURL(file)
+  }
+
   const handleFileChange = (e) => {
     const file = e.target.files[0]
     if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setFormData(prev => ({ ...prev, image: file, previewUrl: reader.result }))
-      }
-      reader.readAsDataURL(file)
+      compressImage(file, (compressedUrl) => {
+        setFormData(prev => ({ ...prev, image: file, previewUrl: compressedUrl }))
+      })
     }
   }
 
@@ -94,12 +134,18 @@ export default function Register() {
         navigate('/lgu')
       } else {
         try {
+          // Only include photo if it's small enough for Vercel's body limit
+          let photoToSend = formData.previewUrl
+          if (photoToSend && photoToSend.length > 500000) {
+            console.warn('Photo too large even after compression, skipping photo upload')
+            photoToSend = null
+          }
           const petRes = await createPet({
             name: formData.petName,
             species: formData.species,
             breed: formData.breed,
             note: formData.note,
-            photo_url: formData.previewUrl
+            photo_url: photoToSend
           })
           const tagId = petRes.data?.tag_id || ''
           const qrUrl = petRes.data?.qr_code_url || ''
