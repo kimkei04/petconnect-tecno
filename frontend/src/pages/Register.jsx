@@ -12,7 +12,6 @@ export default function Register() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [isScanning, setIsScanning] = useState(false)
   
   const [formData, setFormData] = useState({
     fullName: '',
@@ -48,8 +47,6 @@ export default function Register() {
     }
   }
 
-  // Simulating tag generation is no longer needed; handled by backend
-
   const nextStep = () => {
     if (step === 1) {
       if (!formData.fullName || !formData.email || !formData.password) {
@@ -59,7 +56,7 @@ export default function Register() {
     if (step === 2) {
       if (!formData.petName) return setError('Please provide your pet\'s name.')
     }
-    if (step < 3) setStep(step + 1)
+    if (step < 4) setStep(step + 1)
   }
 
   const prevStep = () => {
@@ -104,7 +101,7 @@ export default function Register() {
           photo_url: formData.previewUrl
         })
         setFormData(prev => ({ ...prev, tagId: petRes.data.tag_id, qrUrl: petRes.data.qr_code_url }))
-        setStep(4) // Move to Success Step
+        setStep(3) // Move to Link Tag Step to show the generated tag
       }
     } catch (err) {
       console.error('Registration/Pet creation error:', err)
@@ -121,7 +118,8 @@ export default function Register() {
   const steps = [
     { id: 1, label: 'ACCOUNT', icon: 'account_circle' },
     { id: 2, label: 'PET INFO', icon: 'pets' },
-    { id: 3, label: 'CONFIRM', icon: 'check_circle' }
+    { id: 3, label: 'LINK TAG', icon: 'sensors' },
+    { id: 4, label: 'CONFIRM', icon: 'check_circle' }
   ]
 
   return (
@@ -273,6 +271,40 @@ export default function Register() {
             {step === 3 && (
               <div className="space-y-10">
                 <div className="flex items-center gap-6 text-on-surface-variant/30">
+                   <div className="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center font-bold text-sm text-primary">3</div>
+                   <h2 className="text-2xl font-serif-elegant font-bold tracking-tight text-on-surface">Link NFC Tag</h2>
+                   <div className="flex-1 h-[1px] bg-surface-container"></div>
+                </div>
+
+                <div className="bg-white rounded-[2.5rem] p-12 border border-surface-container shadow-xl shadow-primary/5 flex flex-col items-center gap-10">
+                  <div className="w-48 h-48 bg-white border border-surface-container p-4 rounded-3xl shadow-md flex items-center justify-center">
+                    {formData.qrUrl && <QRCode value={formData.qrUrl} size={160} />}
+                  </div>
+                  
+                  <div className="w-full space-y-6">
+                    <div className="space-y-3 text-center">
+                      <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em]">Generated Tag ID</label>
+                      <p className="text-2xl font-bold tracking-[0.1em] text-primary">{formData.tagId}</p>
+                    </div>
+                    <div className="space-y-3 text-center">
+                      <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em]">QR Code URL</label>
+                      <p className="text-xs font-medium text-on-surface-variant break-all bg-surface-container-low/50 rounded-2xl p-4">{formData.qrUrl}</p>
+                    </div>
+                    <div className="bg-primary-container/30 rounded-2xl p-5 flex items-start gap-4">
+                      <span className="material-symbols-outlined text-primary text-2xl mt-0.5">info</span>
+                      <p className="text-xs text-on-surface-variant leading-relaxed">
+                        This unique QR code and Tag ID have been automatically generated for <strong>{formData.petName}</strong>. 
+                        Write this Tag ID on your pet's NFC tag, or scan the QR code to access your pet's public profile.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {step === 4 && (
+              <div className="space-y-10">
+                <div className="flex items-center gap-6 text-on-surface-variant/30">
                    <div className="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center font-bold text-sm text-primary">4</div>
                    <h2 className="text-2xl font-serif-elegant font-bold tracking-tight text-on-surface">Confirmation</h2>
                    <div className="flex-1 h-[1px] bg-surface-container"></div>
@@ -295,30 +327,10 @@ export default function Register() {
                         <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em]">{formData.breed || 'Companion'}</p>
                       </div>
                     </div>
+                    <div className="w-10 h-10 bg-tertiary-container rounded-full flex items-center justify-center">
+                      <span className="material-symbols-outlined text-tertiary text-2xl">verified</span>
+                    </div>
                   </div>
-                </div>
-              </div>
-            )}
-
-            {step === 4 && (
-              <div className="space-y-10">
-                <div className="flex items-center gap-6 text-on-surface-variant/30">
-                   <div className="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center font-bold text-sm text-primary">✓</div>
-                   <h2 className="text-2xl font-serif-elegant font-bold tracking-tight text-on-surface">Protected!</h2>
-                   <div className="flex-1 h-[1px] bg-surface-container"></div>
-                </div>
-
-                <div className="bg-white rounded-[2.5rem] p-10 border border-surface-container shadow-xl shadow-primary/5 flex flex-col items-center gap-8 text-center">
-                  <div className="w-48 h-48 bg-white border border-surface-container p-4 rounded-3xl shadow-md flex items-center justify-center">
-                    {formData.qrUrl && <QRCode value={formData.qrUrl} size={160} />}
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em]">Generated Tag ID</p>
-                    <p className="text-2xl font-bold tracking-[0.1em] text-primary">{formData.tagId}</p>
-                  </div>
-                  <button onClick={() => navigate('/dashboard')} className="w-full py-5 bg-brown-gradient text-on-primary rounded-2xl font-bold text-[11px] uppercase tracking-[0.2em] shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all">
-                    Go to Dashboard
-                  </button>
                 </div>
               </div>
             )}
@@ -326,26 +338,33 @@ export default function Register() {
         </div>
       </main>
 
-      {step < 4 && (
-        <footer className="fixed bottom-0 left-0 w-full bg-surface/80 backdrop-blur-xl border-t border-surface-container/50 p-8 z-50">
-          <div className="max-w-md mx-auto flex justify-between items-center px-4">
-            <button 
-              onClick={role === 'lgu' ? () => navigate(`/login?role=${role}`) : prevStep} 
-              className={`flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.2em] transition-all ${(step === 1 && role !== 'lgu') ? 'opacity-0 pointer-events-none' : 'text-on-surface-variant hover:text-primary'}`}
-            >
-              <span className="material-symbols-outlined text-lg">arrow_back</span> Back
-            </button>
-            <button 
-              onClick={role === 'lgu' ? handleFinalSubmit : (step === 3 ? handleFinalSubmit : nextStep)}
-              disabled={loading}
-              className="px-12 py-5 bg-brown-gradient text-on-primary rounded-2xl font-bold text-[11px] uppercase tracking-[0.2em] flex items-center gap-4 shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all disabled:opacity-50 group"
-            >
-              {loading ? <span className="material-symbols-outlined animate-spin text-lg">progress_activity</span> : (role === 'lgu' || step === 3) ? 'Complete Registration' : 'Next Step'}
-              {!loading && <span className="material-symbols-outlined text-lg group-hover:translate-x-1 transition-transform">arrow_forward</span>}
-            </button>
-          </div>
-        </footer>
-      )}
+      <footer className="fixed bottom-0 left-0 w-full bg-surface/80 backdrop-blur-xl border-t border-surface-container/50 p-8 z-50">
+        <div className="max-w-md mx-auto flex justify-between items-center px-4">
+          <button 
+            onClick={step === 4 ? () => {} : (step === 3 ? () => {} : (role === 'lgu' ? () => navigate(`/login?role=${role}`) : prevStep))} 
+            className={`flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.2em] transition-all ${(step === 1 && role !== 'lgu') || step >= 3 ? 'opacity-0 pointer-events-none' : 'text-on-surface-variant hover:text-primary'}`}
+          >
+            <span className="material-symbols-outlined text-lg">arrow_back</span> Back
+          </button>
+          <button 
+            onClick={
+              step === 4 ? () => navigate('/dashboard') :
+              step === 3 ? () => setStep(4) :
+              role === 'lgu' ? handleFinalSubmit :
+              step === 2 ? handleFinalSubmit :
+              nextStep
+            }
+            disabled={loading}
+            className="px-12 py-5 bg-brown-gradient text-on-primary rounded-2xl font-bold text-[11px] uppercase tracking-[0.2em] flex items-center gap-4 shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all disabled:opacity-50 group"
+          >
+            {loading ? <span className="material-symbols-outlined animate-spin text-lg">progress_activity</span> : 
+              step === 4 ? 'Go to Dashboard' :
+              step === 3 ? 'Continue' :
+              (role === 'lgu' || step === 2) ? 'Complete Registration' : 'Next Step'}
+            {!loading && <span className="material-symbols-outlined text-lg group-hover:translate-x-1 transition-transform">arrow_forward</span>}
+          </button>
+        </div>
+      </footer>
 
       <style dangerouslySetInnerHTML={{ __html: `
         @keyframes bounce-slow { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
