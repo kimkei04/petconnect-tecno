@@ -208,7 +208,7 @@ export default function PetProfile() {
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant/50 mb-1">Assigned Tag ID</p>
               <p className="font-mono text-xl font-bold text-primary tracking-wider">{pet.tag_id || 'PC-XXXX-XXXX'}</p>
             </div>
-            <Link to={`/tag/${pet.tag_id}`} className="px-4 py-2 bg-white text-[10px] font-bold text-secondary border border-surface-container rounded-lg uppercase tracking-widest hover:border-secondary transition-all">
+            <Link to={`/tag/${pet.tag_id || pet.id}`} className="px-4 py-2 bg-white text-[10px] font-bold text-secondary border border-surface-container rounded-lg uppercase tracking-widest hover:border-secondary transition-all">
               Public Scan
             </Link>
           </div>
