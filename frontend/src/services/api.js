@@ -9,8 +9,8 @@ const setStore = (key, val) => localStorage.setItem(key, JSON.stringify(val));
 // Initialize mock data if not exists
 if (!localStorage.getItem('mockPets')) {
   setStore('mockPets', [
-    { id: 1, name: 'Milo', species: 'Dog', breed: 'Golden Retriever', age: 3, status: 'healthy', photo_url: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1', owner_name: 'John Doe', owner_phone: '09171234567' },
-    { id: 2, name: 'Luna', species: 'Cat', breed: 'Persian', age: 2, status: 'lost', photo_url: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba', owner_name: 'Jane Smith', owner_phone: '09181234567' }
+    { id: 1, tag_id: 'PTC-7741-A', name: 'Milo', species: 'Dog', breed: 'Golden Retriever', age: 3, status: 'healthy', photo_url: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1', owner_name: 'John Doe', owner_phone: '09171234567' },
+    { id: 2, tag_id: 'PTC-7741-B', name: 'Luna', species: 'Cat', breed: 'Persian', age: 2, status: 'lost', photo_url: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba', owner_name: 'Jane Smith', owner_phone: '09181234567' }
   ]);
 }
 
@@ -59,7 +59,7 @@ export const getPet = async (id) => {
 export const createPet = async (data) => {
   await delay();
   const pets = getStore('mockPets', []);
-  const newPet = { ...data, id: Date.now(), status: 'healthy' };
+  const newPet = { ...data, id: Date.now(), status: 'healthy', tag_id: `PTC-${Math.floor(1000 + Math.random() * 9000)}` };
   setStore('mockPets', [...pets, newPet]);
   return { data: newPet };
 };
@@ -87,7 +87,8 @@ export const deletePet = async (id) => {
 export const getPublicTag = async (tagId) => {
   await delay();
   const pets = getStore('mockPets', []);
-  const pet = pets.find(p => String(p.id) === String(tagId) || p.status === 'lost') || pets[1];
+  const pet = pets.find(p => String(p.tag_id) === String(tagId) || String(p.id) === String(tagId));
+  if (!pet) throw new Error('Tag not found');
   return { data: pet };
 };
 
@@ -98,6 +99,16 @@ export const submitScanLog = async (tagId, data) => {
 
 export const submitScanMessage = async (tagId, data) => {
   await delay();
+  const alerts = getStore('mockAlerts', []);
+  const newAlert = {
+    id: Date.now(),
+    title: 'New Sighting Message',
+    message: data.message,
+    type: 'sighting',
+    created_at: new Date().toISOString(),
+    is_read: false
+  };
+  setStore('mockAlerts', [newAlert, ...alerts]);
   return { data: { message: 'Message sent' } };
 };
 
@@ -135,7 +146,10 @@ export const reportLost = async (id, data) => {
   await delay();
   let pets = getStore('mockPets', []);
   const p = pets.find(p => String(p.id) === String(id));
-  if (p) p.status = 'lost';
+  if (p) {
+    p.status = 'lost';
+    Object.assign(p, data);
+  }
   setStore('mockPets', pets);
   return { data: { message: 'Reported lost' } };
 };
@@ -151,6 +165,18 @@ export const resolvedLost = async (id) => {
 
 export const submitSighting = async (reportId, data) => {
   await delay();
+  const alerts = getStore('mockAlerts', []);
+  const newAlert = {
+    id: Date.now(),
+    title: 'New Pet Sighting!',
+    message: `A sighting was reported: ${data.message || 'No details'}. Contact: ${data.reporter_phone || 'None'}`,
+    type: 'sighting',
+    created_at: new Date().toISOString(),
+    is_read: false,
+    latitude: data.latitude,
+    longitude: data.longitude
+  };
+  setStore('mockAlerts', [newAlert, ...alerts]);
   return { data: { message: 'Sighting reported' } };
 };
 
@@ -184,4 +210,27 @@ export const initiateTransfer = async () => {
 export const acceptTransfer = async () => ({ data: { message: 'Accepted' } });
 export const rejectTransfer = async () => ({ data: { message: 'Rejected' } });
 
-export default {};
+// API Object for components using API.get/post
+const API = {
+  get: async (url) => {
+    if (url.includes('/public/tag/')) {
+      const tagId = url.split('/').pop();
+      return getPublicTag(tagId);
+    }
+    return { data: {} };
+  },
+  post: async (url, data) => {
+    if (url.includes('/public/message/')) {
+      const tagId = url.split('/').pop();
+      return submitScanMessage(tagId, data);
+    }
+    if (url.includes('/public/scan/')) {
+      const tagId = url.split('/').pop();
+      return submitScanLog(tagId, data);
+    }
+    return { data: {} };
+  }
+};
+
+export default API;
+
