@@ -46,15 +46,21 @@ async function start() {
     console.log('✅ Database connected');
   } catch (err) {
     console.error('❌ Database connection failed:', err.message);
-    console.error('   Check XAMPP MySQL is running and petconnect database exists.');
-    process.exit(1);
+    if (!process.env.VERCEL) {
+       console.error('   Check XAMPP MySQL is running and petconnect database exists.');
+    }
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`✅ Server running on port ${PORT}`);
-    console.log(`🏠 Local: http://localhost:${PORT}`);
-    console.log(`🌐 Network: Check your PC's IP address (e.g., http://192.168.x.x:${PORT})`);
-  });
+  // Only listen if not running in a Vercel serverless environment
+  if (!process.env.VERCEL) {
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`✅ Server running on port ${PORT}`);
+      console.log(`🏠 Local: http://localhost:${PORT}`);
+      console.log(`🌐 Network: Check your PC's IP address (e.g., http://192.168.x.x:${PORT})`);
+    });
+  }
 }
 
 start();
+
+export default app;

@@ -1,11 +1,6 @@
 import axios from 'axios'
 
-const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.match(/\d+\.\d+\.\d+\.\d+/);
-const baseURL = import.meta.env.DEV
-  ? '/api'
-  : isLocal
-    ? `http://${window.location.hostname}:5000/api`
-    : `https://${window.location.hostname}/api`;
+const baseURL = '/api';
 
 const API = axios.create({
   baseURL,
