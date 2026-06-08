@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS `pets` (
   `owner_id` INT DEFAULT NULL,
   `tag_id` VARCHAR(50) DEFAULT NULL,
   `name` VARCHAR(100) NOT NULL,
-  `species` ENUM('Dog','Cat','Bird','Other') DEFAULT 'Dog',
+  `species` ENUM('Dog','Cat','Bird','Rabbit','Other') DEFAULT 'Dog',
   `breed` VARCHAR(100) DEFAULT NULL,
   `sex` ENUM('Male','Female','Unknown') DEFAULT 'Unknown',
   `date_of_birth` DATE DEFAULT NULL,

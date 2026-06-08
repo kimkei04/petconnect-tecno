@@ -69,6 +69,13 @@ router.post('/', auth, async (req, res) => {
     const appDomain = process.env.VITE_APP_URL || (req.headers.origin ? req.headers.origin : 'http://localhost:5173');
     const qrUrl = `${appDomain}/tag/${finalTagId}`;
 
+    // 1. Create the NFC tag entry first to satisfy foreign key constraint on pets.tag_id -> nfc_tags.tag_uid
+    await db.query(
+      'INSERT INTO nfc_tags (tag_uid, pet_id, qr_code_url, status, activated_at) VALUES (?, NULL, ?, "active", CURRENT_TIMESTAMP)',
+      [finalTagId, qrUrl]
+    );
+
+    // 2. Insert pet referencing the generated tag_id
     const [result] = await db.query(
       'INSERT INTO pets (owner_id, name, species, breed, sex, date_of_birth, weight, color, photo_url, microchip_id, address, hide_phone, hide_address, hide_medical, barangay, tag_id, note) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [req.userId, name, species, breed, sex || 'Unknown', date_of_birth || null, weight || null, color || null, photo_url || null, microchip_id || null, address || null, hide_phone || 0, hide_address || 0, hide_medical || 0, barangay || null, finalTagId, note || null]
@@ -76,10 +83,10 @@ router.post('/', auth, async (req, res) => {
 
     const petId = result.insertId;
 
-    // Link NFC Tag with generated QR URL
+    // 3. Update the NFC tag entry to link it back to the newly created pet
     await db.query(
-      'INSERT INTO nfc_tags (tag_uid, pet_id, qr_code_url, status, activated_at) VALUES (?, ?, ?, "active", CURRENT_TIMESTAMP)',
-      [finalTagId, petId, qrUrl]
+      'UPDATE nfc_tags SET pet_id = ? WHERE tag_uid = ?',
+      [petId, finalTagId]
     );
 
     // Sync Vaccines
