@@ -8,7 +8,7 @@ const router = express.Router();
 router.get('/', auth, async (req, res) => {
   try {
     const [rows] = await db.query(
-      `SELECT p.*, COALESCE(p.tag_id, nt.tag_uid) as tag_id
+      `SELECT p.*, COALESCE(p.tag_id, nt.tag_uid) as tag_id, nt.qr_code_url
        FROM pets p
        LEFT JOIN nfc_tags nt ON nt.pet_id = p.id AND nt.status = 'active'
        WHERE p.owner_id = ?
@@ -26,7 +26,7 @@ router.get('/', auth, async (req, res) => {
 router.get('/:id', auth, async (req, res) => {
   try {
     const [rows] = await db.query(
-      `SELECT p.*, COALESCE(p.tag_id, nt.tag_uid) as tag_id
+      `SELECT p.*, COALESCE(p.tag_id, nt.tag_uid) as tag_id, nt.qr_code_url
        FROM pets p
        LEFT JOIN nfc_tags nt ON nt.pet_id = p.id AND nt.status = 'active'
        WHERE p.id = ? AND p.owner_id = ?`,
@@ -55,26 +55,31 @@ router.get('/:id', auth, async (req, res) => {
 // Create pet
 router.post('/', auth, async (req, res) => {
   try {
-    const { name, species, breed, sex, date_of_birth, weight, color, photo_url, microchip_id, address, hide_phone, hide_address, hide_medical, barangay, tag_id, vaccines, emergencyContacts } = req.body;
+    const { name, species, breed, sex, date_of_birth, weight, color, photo_url, microchip_id, address, hide_phone, hide_address, hide_medical, barangay, tag_id, vaccines, emergencyContacts, note } = req.body;
     
-    const finalTagId = tag_id || `PTC-${Math.floor(1000 + Math.random() * 9000)}-${name?.charAt(0).toUpperCase() || 'P'}`;
-    
-    const [existingTag] = await db.query('SELECT id FROM nfc_tags WHERE tag_uid = ? AND status = "active"', [finalTagId]);
-    if (existingTag.length > 0) {
-      return res.status(400).json({ message: 'NFC Tag is already registered to another pet' });
+    // Generate unique 6-character tag ID
+    let finalTagId = '';
+    let isUnique = false;
+    while (!isUnique) {
+      finalTagId = 'PC-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+      const [existingTag] = await db.query('SELECT id FROM nfc_tags WHERE tag_uid = ?', [finalTagId]);
+      if (existingTag.length === 0) isUnique = true;
     }
 
+    const appDomain = process.env.VITE_APP_URL || (req.headers.origin ? req.headers.origin : 'http://localhost:5173');
+    const qrUrl = `${appDomain}/tag/${finalTagId}`;
+
     const [result] = await db.query(
-      'INSERT INTO pets (owner_id, name, species, breed, sex, date_of_birth, weight, color, photo_url, microchip_id, address, hide_phone, hide_address, hide_medical, barangay, tag_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [req.userId, name, species, breed, sex || 'Unknown', date_of_birth || null, weight || null, color || null, photo_url || null, microchip_id || null, address || null, hide_phone || 0, hide_address || 0, hide_medical || 0, barangay || null, finalTagId]
+      'INSERT INTO pets (owner_id, name, species, breed, sex, date_of_birth, weight, color, photo_url, microchip_id, address, hide_phone, hide_address, hide_medical, barangay, tag_id, note) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [req.userId, name, species, breed, sex || 'Unknown', date_of_birth || null, weight || null, color || null, photo_url || null, microchip_id || null, address || null, hide_phone || 0, hide_address || 0, hide_medical || 0, barangay || null, finalTagId, note || null]
     );
 
     const petId = result.insertId;
 
-    // Link NFC Tag
+    // Link NFC Tag with generated QR URL
     await db.query(
-      'INSERT INTO nfc_tags (tag_uid, pet_id, status, activated_at) VALUES (?, ?, "active", CURRENT_TIMESTAMP) ON DUPLICATE KEY UPDATE pet_id = ?, status = "active", activated_at = CURRENT_TIMESTAMP',
-      [finalTagId, petId, petId]
+      'INSERT INTO nfc_tags (tag_uid, pet_id, qr_code_url, status, activated_at) VALUES (?, ?, ?, "active", CURRENT_TIMESTAMP)',
+      [finalTagId, petId, qrUrl]
     );
 
     // Sync Vaccines
@@ -107,7 +112,7 @@ router.post('/', auth, async (req, res) => {
       }
     }
     
-    res.status(201).json({ id: petId, tag_id: finalTagId });
+    res.status(201).json({ id: petId, tag_id: finalTagId, qr_code_url: qrUrl });
   } catch (err) {
     console.error('Create Pet Error:', err);
     res.status(500).json({ message: 'Failed to register pet', error: err.message });
@@ -118,11 +123,11 @@ router.post('/', auth, async (req, res) => {
 router.put('/:id', auth, async (req, res) => {
   try {
     const petId = req.params.id;
-    const { name, species, breed, sex, date_of_birth, weight, color, photo_url, microchip_id, address, hide_phone, hide_address, hide_medical, barangay, vaccines, emergencyContacts } = req.body;
+    const { name, species, breed, sex, date_of_birth, weight, color, photo_url, microchip_id, address, hide_phone, hide_address, hide_medical, barangay, vaccines, emergencyContacts, note } = req.body;
     
     await db.query(
-      'UPDATE pets SET name=?, species=?, breed=?, sex=?, date_of_birth=?, weight=?, color=?, photo_url=?, microchip_id=?, address=?, hide_phone=?, hide_address=?, hide_medical=?, barangay=? WHERE id=? AND owner_id=?',
-      [name, species, breed, sex || 'Unknown', date_of_birth || null, weight || null, color || null, photo_url || null, microchip_id || null, address || null, hide_phone || 0, hide_address || 0, hide_medical || 0, barangay || null, petId, req.userId]
+      'UPDATE pets SET name=?, species=?, breed=?, sex=?, date_of_birth=?, weight=?, color=?, photo_url=?, microchip_id=?, address=?, hide_phone=?, hide_address=?, hide_medical=?, barangay=?, note=? WHERE id=? AND owner_id=?',
+      [name, species, breed, sex || 'Unknown', date_of_birth || null, weight || null, color || null, photo_url || null, microchip_id || null, address || null, hide_phone || 0, hide_address || 0, hide_medical || 0, barangay || null, note || null, petId, req.userId]
     );
 
     // Sync self-reported vaccines (do not delete vet-certified records where administered_by is not null)

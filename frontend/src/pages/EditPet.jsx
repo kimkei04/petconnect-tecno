@@ -11,6 +11,8 @@ export default function EditPet() {
   const [loading, setLoading] = useState(!isNew)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [showSuccess, setShowSuccess] = useState(false)
+  const [successData, setSuccessData] = useState(null)
   
   const [form, setForm] = useState({
     name: '', 
@@ -26,7 +28,8 @@ export default function EditPet() {
     hide_phone: 0,
     hide_address: 0,
     hide_medical: 0,
-    tag_id: ''
+    tag_id: '',
+    note: ''
   })
   
   const [petPhoto, setPetPhoto] = useState(null)
@@ -163,9 +166,18 @@ export default function EditPet() {
         marking_images: JSON.stringify(markingImagePreviews)
       }
       
-      if (isNew) await createPet(payload)
-      else await updatePet(id, payload)
-      navigate('/dashboard')
+      if (isNew) {
+        const petRes = await createPet(payload)
+        setSuccessData({
+          tagId: petRes.data.tag_id,
+          qrUrl: petRes.data.qr_code_url,
+          petName: form.name
+        })
+        setShowSuccess(true)
+      } else {
+        await updatePet(id, payload)
+        navigate('/dashboard')
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to save pet profile.')
     } finally {
@@ -178,6 +190,45 @@ export default function EditPet() {
       <span className="material-symbols-outlined animate-spin text-primary text-5xl">progress_activity</span>
     </div>
   )
+
+  if (showSuccess && successData) {
+    return (
+      <div className="min-h-screen bg-surface pb-40 selection:bg-primary-container selection:text-primary font-sans flex flex-col">
+        <header className="bg-surface/80 backdrop-blur-md fixed top-0 w-full z-50 px-6 h-[72px] flex items-center gap-4 border-b border-surface-container/30 soft-shadow">
+          <h1 className="text-[20px] font-semibold text-on-surface tracking-tight leading-none mx-auto">Registration Complete</h1>
+        </header>
+
+        <div className="flex-1 flex flex-col items-center justify-center px-6 pt-[112px] animate-in fade-in slide-in-from-bottom-6 duration-700">
+          <div className="bg-white rounded-[2.5rem] p-10 border border-surface-container shadow-xl shadow-primary/5 flex flex-col items-center gap-8 text-center max-w-md w-full">
+            <div className="w-20 h-20 bg-primary text-on-primary rounded-full flex items-center justify-center shadow-lg mb-2">
+              <span className="material-symbols-outlined text-4xl">check_circle</span>
+            </div>
+            <h2 className="text-3xl font-serif-elegant font-bold tracking-tight text-on-surface">Protected!</h2>
+            <p className="text-on-surface-variant">{successData.petName} is now successfully registered.</p>
+            
+            <div className="w-48 h-48 bg-white border border-surface-container p-4 rounded-3xl shadow-md flex items-center justify-center">
+              {successData.qrUrl && (
+                <img 
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(successData.qrUrl)}`} 
+                  alt="QR Code" 
+                  className="w-full h-full"
+                />
+              )}
+            </div>
+            
+            <div className="space-y-2">
+              <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em]">Generated Tag ID</p>
+              <p className="text-2xl font-bold tracking-[0.1em] text-primary">{successData.tagId}</p>
+            </div>
+            
+            <button onClick={() => navigate('/dashboard')} className="w-full mt-4 py-5 bg-brown-gradient text-on-primary rounded-2xl font-bold text-[11px] uppercase tracking-[0.2em] shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all">
+              Go to Dashboard
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-surface pb-40 selection:bg-primary-container selection:text-primary font-sans">
@@ -259,6 +310,11 @@ export default function EditPet() {
             </div>
           </div>
 
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em] ml-1">Note (Personality/Behavior)</label>
+            <textarea name="note" value={form.note || ''} onChange={handleChange} rows="3" placeholder="Describe your pet's attitude, behavior, or personality (e.g. friendly, shy, may bite if startled)." className="w-full bg-surface-container-low/50 border border-surface-container rounded-2xl p-5 text-sm font-medium text-on-surface focus:outline-none resize-none"></textarea>
+          </div>
+
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em] ml-1">Date of Birth</label>
@@ -292,10 +348,10 @@ export default function EditPet() {
             </div>
           </div>
 
-          {isNew && (
+          {!isNew && (
             <div className="space-y-2">
-              <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em] ml-1">Link NFC/QR Tag ID</label>
-              <input name="tag_id" value={form.tag_id || ''} onChange={handleChange} placeholder="e.g. PTC-1234-X" className="w-full bg-surface-container-low/50 border border-surface-container rounded-2xl p-5 text-sm font-bold text-on-surface focus:outline-none" />
+              <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em] ml-1">NFC/QR Tag ID</label>
+              <input name="tag_id" value={form.tag_id || ''} disabled className="w-full bg-surface-container-low border border-surface-container rounded-2xl p-5 text-sm font-bold text-on-surface focus:outline-none cursor-not-allowed" />
             </div>
           )}
 

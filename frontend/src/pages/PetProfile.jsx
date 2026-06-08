@@ -253,6 +253,19 @@ export default function PetProfile() {
           ))}
         </div>
 
+        {/* Note / Personality */}
+        {pet.note && (
+          <div className="bg-secondary-container/30 rounded-3xl p-6 border border-secondary/10 shadow-sm">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="material-symbols-outlined text-secondary">psychology</span>
+              <p className="text-[10px] font-bold text-secondary uppercase tracking-widest">Personality & Behavior Note</p>
+            </div>
+            <p className="text-sm font-medium text-on-surface-variant leading-relaxed">
+              {pet.note}
+            </p>
+          </div>
+        )}
+
         {/* Identifying Photos */}
         {markingImages && markingImages.length > 0 && (
           <div className="space-y-4">

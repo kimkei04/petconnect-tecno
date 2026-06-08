@@ -11,7 +11,6 @@ export default function Register() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [isScanning, setIsScanning] = useState(false)
   
   const [formData, setFormData] = useState({
     fullName: '',
@@ -24,7 +23,9 @@ export default function Register() {
     petName: '',
     species: 'Dog',
     breed: '',
+    note: '',
     tagId: '',
+    qrUrl: '',
     image: null,
     previewUrl: null
   })
@@ -43,14 +44,6 @@ export default function Register() {
       }
       reader.readAsDataURL(file)
     }
-  }
-
-  const simulateScan = () => {
-    setIsScanning(true)
-    setTimeout(() => {
-      setFormData(prev => ({ ...prev, tagId: 'PC-' + Math.random().toString(36).substring(2, 6).toUpperCase() + '-' + Math.random().toString(36).substring(2, 6).toUpperCase() }))
-      setIsScanning(false)
-    }, 2000)
   }
 
   const nextStep = () => {
@@ -99,14 +92,15 @@ export default function Register() {
       if (role === 'lgu') {
         navigate('/lgu')
       } else {
-        await createPet({
+        const petRes = await createPet({
           name: formData.petName,
           species: formData.species,
           breed: formData.breed,
-          tag_id: formData.tagId,
+          note: formData.note,
           photo_url: formData.previewUrl
         })
-        navigate('/dashboard')
+        setFormData(prev => ({ ...prev, tagId: petRes.data.tag_id, qrUrl: petRes.data.qr_code_url }))
+        setStep(3) // Move to Link Tag Step to show the generated tag
       }
     } catch (err) {
       console.error('Registration/Pet creation error:', err)
@@ -223,13 +217,17 @@ export default function Register() {
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em] ml-1">Species</label>
                       <select name="species" value={formData.species} onChange={handleChange} className="w-full bg-surface-container-low/50 border border-surface-container rounded-2xl p-5 text-base font-medium text-on-surface appearance-none focus:outline-none focus:ring-4 focus:ring-primary/5 transition-all">
-                        <option>Dog</option><option>Cat</option>
+                        <option>Dog</option><option>Cat</option><option>Bird</option><option>Rabbit</option><option>Other</option>
                       </select>
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em] ml-1">Breed</label>
                       <input name="breed" value={formData.breed} onChange={handleChange} type="text" placeholder="e.g. Beagle" className="w-full bg-surface-container-low/50 border border-surface-container rounded-2xl p-5 text-base font-medium text-on-surface focus:outline-none focus:ring-4 focus:ring-primary/5 transition-all" />
                     </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em] ml-1">Note (Personality/Behavior)</label>
+                    <textarea name="note" value={formData.note} onChange={handleChange} rows="3" placeholder="Describe your pet's attitude, behavior, or personality (e.g. friendly, shy, may bite if startled)." className="w-full bg-surface-container-low/50 border border-surface-container rounded-2xl p-5 text-sm font-medium text-on-surface focus:outline-none focus:ring-4 focus:ring-primary/5 transition-all resize-none"></textarea>
                   </div>
                   
                   {/* REAL PHOTO UPLOAD */}
@@ -278,23 +276,32 @@ export default function Register() {
                 </div>
 
                 <div className="bg-white rounded-[2.5rem] p-12 border border-surface-container shadow-xl shadow-primary/5 flex flex-col items-center gap-10">
-                  <div className={`w-40 h-40 rounded-[2.5rem] flex items-center justify-center shadow-inner relative overflow-hidden transition-all duration-700 ${formData.tagId ? 'bg-primary' : 'bg-surface-container-low'}`}>
-                    {isScanning && <div className="absolute inset-0 bg-white/20 animate-ping scale-150 rounded-full"></div>}
-                    <span className={`material-symbols-outlined text-6xl ${formData.tagId ? 'text-on-primary' : 'text-on-surface-variant/20'} ${isScanning ? 'animate-pulse' : ''}`}>{formData.tagId ? 'verified' : 'sensors'}</span>
+                  <div className="w-48 h-48 bg-white border border-surface-container p-4 rounded-3xl shadow-md flex items-center justify-center">
+                    {formData.qrUrl && (
+                      <img 
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(formData.qrUrl)}`} 
+                        alt="QR Code" 
+                        className="w-full h-full"
+                      />
+                    )}
                   </div>
                   
                   <div className="w-full space-y-6">
                     <div className="space-y-3 text-center">
-                      <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em]">Tag ID Number</label>
-                      <input name="tagId" value={formData.tagId} onChange={handleChange} type="text" placeholder="PC - XXXX - XXXX" className="w-full bg-surface-container-low/50 border border-surface-container rounded-2xl p-6 text-center text-lg font-bold text-on-surface tracking-[0.2em] focus:outline-none focus:ring-4 focus:ring-primary/5" />
+                      <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em]">Generated Tag ID</label>
+                      <p className="text-2xl font-bold tracking-[0.1em] text-primary">{formData.tagId}</p>
                     </div>
-                    <button 
-                      onClick={simulateScan}
-                      disabled={isScanning}
-                      className="w-full py-5 bg-primary-container text-primary rounded-2xl font-bold text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-primary-container/80 transition-all shadow-sm active:scale-95"
-                    >
-                      {isScanning ? 'Scanning...' : formData.tagId ? 'Link Different Tag' : 'Simulate NFC Scan'}
-                    </button>
+                    <div className="space-y-3 text-center">
+                      <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em]">QR Code URL</label>
+                      <p className="text-xs font-medium text-on-surface-variant break-all bg-surface-container-low/50 rounded-2xl p-4">{formData.qrUrl}</p>
+                    </div>
+                    <div className="bg-primary-container/30 rounded-2xl p-5 flex items-start gap-4">
+                      <span className="material-symbols-outlined text-primary text-2xl mt-0.5">info</span>
+                      <p className="text-xs text-on-surface-variant leading-relaxed">
+                        This unique QR code and Tag ID have been automatically generated for <strong>{formData.petName}</strong>. 
+                        Write this Tag ID on your pet's NFC tag, or scan the QR code to access your pet's public profile.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -339,17 +346,26 @@ export default function Register() {
       <footer className="fixed bottom-0 left-0 w-full bg-surface/80 backdrop-blur-xl border-t border-surface-container/50 p-8 z-50">
         <div className="max-w-md mx-auto flex justify-between items-center px-4">
           <button 
-            onClick={role === 'lgu' ? () => navigate(`/login?role=${role}`) : prevStep} 
-            className={`flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.2em] transition-all ${(step === 1 && role !== 'lgu') ? 'opacity-0 pointer-events-none' : 'text-on-surface-variant hover:text-primary'}`}
+            onClick={step === 4 ? () => {} : (step === 3 ? () => {} : (role === 'lgu' ? () => navigate(`/login?role=${role}`) : prevStep))} 
+            className={`flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.2em] transition-all ${(step === 1 && role !== 'lgu') || step >= 3 ? 'opacity-0 pointer-events-none' : 'text-on-surface-variant hover:text-primary'}`}
           >
             <span className="material-symbols-outlined text-lg">arrow_back</span> Back
           </button>
           <button 
-            onClick={role === 'lgu' ? handleFinalSubmit : (step === 4 ? handleFinalSubmit : nextStep)}
+            onClick={
+              step === 4 ? () => navigate('/dashboard') :
+              step === 3 ? () => setStep(4) :
+              role === 'lgu' ? handleFinalSubmit :
+              step === 2 ? handleFinalSubmit :
+              nextStep
+            }
             disabled={loading}
             className="px-12 py-5 bg-brown-gradient text-on-primary rounded-2xl font-bold text-[11px] uppercase tracking-[0.2em] flex items-center gap-4 shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all disabled:opacity-50 group"
           >
-            {loading ? <span className="material-symbols-outlined animate-spin text-lg">progress_activity</span> : (role === 'lgu' || step === 4) ? 'Complete Registration' : 'Next Step'}
+            {loading ? <span className="material-symbols-outlined animate-spin text-lg">progress_activity</span> : 
+              step === 4 ? 'Go to Dashboard' :
+              step === 3 ? 'Continue' :
+              (role === 'lgu' || step === 2) ? 'Complete Registration' : 'Next Step'}
             {!loading && <span className="material-symbols-outlined text-lg group-hover:translate-x-1 transition-transform">arrow_forward</span>}
           </button>
         </div>
