@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import axios from 'axios'
-import { submitSighting } from '../services/api'
+import { getLostPets, submitSighting } from '../services/api'
 
 export default function ReportSighting() {
   const { reportId } = useParams()
@@ -29,11 +28,7 @@ export default function ReportSighting() {
 
   const fetchReportDetails = async () => {
     try {
-      // Find this lost pet from the list of lost pets
-      const isLocal = window.location.hostname === 'localhost' || window.location.hostname.match(/\d+\.\d+\.\d+\.\d+/);
-      const baseURL = isLocal ? `http://${window.location.hostname}:5000/api` : `https://${window.location.hostname}/api`;
-      
-      const res = await axios.get(`${baseURL}/public/lost`)
+      const res = await getLostPets()
       const found = res.data.find(r => r.id === parseInt(reportId))
       
       if (!found) {

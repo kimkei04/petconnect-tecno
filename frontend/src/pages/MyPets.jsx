@@ -104,7 +104,7 @@ export default function MyPets() {
                     <Link to={`/pet/${pet.id}/edit`} className="flex items-center gap-2 text-[11px] font-semibold text-on-surface-variant uppercase tracking-[0.08em] hover:text-primary transition-colors">
                       <span className="material-symbols-outlined text-lg">edit_note</span> Edit Profile
                     </Link>
-                    <Link to={`/pet/${pet.id}`} className="w-9 h-9 rounded-full bg-surface-container-low flex items-center justify-center text-on-surface-variant group-hover:bg-primary group-hover:text-on-primary transition-all shadow-sm">
+                    <Link to={`/manage/pet/${pet.id}`} className="w-9 h-9 rounded-full bg-surface-container-low flex items-center justify-center text-on-surface-variant group-hover:bg-primary group-hover:text-on-primary transition-all shadow-sm">
                       <span className="material-symbols-outlined text-lg">arrow_forward</span>
                     </Link>
                   </div>

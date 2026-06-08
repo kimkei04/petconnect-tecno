@@ -85,7 +85,7 @@ export default function Dashboard() {
                    <h3 className="text-lg font-bold tracking-tight">Lost Pet Alert</h3>
                    <p className="text-sm opacity-90 font-medium">{lostPets[0].name} is currently marked as lost. Check for scan activity below.</p>
                 </div>
-                <Link to={`/pet/${lostPets[0].id}`} className="px-6 py-3 bg-white text-error rounded-xl text-xs font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-lg">Manage</Link>
+                <Link to={`/manage/pet/${lostPets[0].id}`} className="px-6 py-3 bg-white text-error rounded-xl text-xs font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-lg">Manage</Link>
              </div>
           </div>
         )}
@@ -148,7 +148,7 @@ export default function Dashboard() {
                         <span className="material-symbols-outlined text-lg">edit_note</span>
                         Edit Profile
                       </Link>
-                      <Link to={`/pet/${pet.id}`} className="w-9 h-9 rounded-full bg-surface-container-low flex items-center justify-center text-on-surface-variant group-hover:bg-primary group-hover:text-on-primary transition-all shadow-sm">
+                      <Link to={`/manage/pet/${pet.id}`} className="w-9 h-9 rounded-full bg-surface-container-low flex items-center justify-center text-on-surface-variant group-hover:bg-primary group-hover:text-on-primary transition-all shadow-sm">
                         <span className="material-symbols-outlined text-lg">arrow_forward</span>
                       </Link>
                     </div>

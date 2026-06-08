@@ -12,6 +12,7 @@ import Settings from './pages/Settings'
 import PetProfile from './pages/PetProfile'
 import EditPet from './pages/EditPet'
 import PublicPetProfile from './pages/PublicPetProfile'
+import PetNfcProfile from './pages/PetNfcProfile'
 import FoundPetPage from './pages/FoundPetPage'
 import LostPet from './pages/LostPet'
 import LguDashboard from './pages/LguDashboard'
@@ -68,7 +69,8 @@ function App() {
             <EditPet />
           </ProtectedRoute>
         } />
-        <Route path="/pet/:id" element={
+        <Route path="/pet/:tagId" element={<PetNfcProfile />} />
+        <Route path="/manage/pet/:id" element={
           <ProtectedRoute allowedRoles={['owner']}>
             <PetProfile />
           </ProtectedRoute>
